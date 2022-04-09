@@ -5,6 +5,7 @@ class EV:
         self._soc = soc
         self._charge_Rate = charge_Rate
         self._batterry_Threshold = batterry_Threshold
+        self._departure_Time = None
 
     @property
     def soc(self):
@@ -18,6 +19,10 @@ class EV:
     def batterry_Threshold(self):
         return self._batterry_Threshold
 
+    @property
+    def departure_Time(self):
+        return self._departure_Time
+
     @soc.setter
     def soc(self, value):
         self._soc = value
@@ -30,3 +35,6 @@ class EV:
     def batterry_Threshold(self, value):
         self._batterry_Threshold = value
 
+    @departure_Time.setter
+    def departure_Time(self, value):
+        self._departure_Time = value
