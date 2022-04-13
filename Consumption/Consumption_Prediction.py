@@ -2,16 +2,21 @@ import pandas as pd
 from Consumption_Generic_Model import Consumption_Generic_Model
 from Consumption_Specific_Model import Consumption_Specific_Model
 import json
+from sklearn.metrics import mean_absolute_error
 
 class Consumption_Prediction:
 
     def __init__(self, past_window=24, featuresNames = [], targetName = None):
-        self.generic_Model = Consumption_Generic_Model(past_window=past_window, featuresNames = featuresNames, targetName = targetName)
-        self.specific_Model = Consumption_Specific_Model(past_window=past_window, featuresNames = featuresNames, targetName = targetName)
 
         self.prediction = None
                 
         self.load_details(past_window,featuresNames, targetName )
+
+        self.specific_Model = Consumption_Specific_Model(past_window=past_window, featuresNames = featuresNames, targetName = targetName)
+
+        if self.best_model == "generic":
+            self.generic_Model = Consumption_Generic_Model(past_window=past_window, featuresNames = featuresNames, targetName = targetName)
+
 
 
     def load_details(self, past_window,featuresNames, targetName):
@@ -25,14 +30,14 @@ class Consumption_Prediction:
             self.targetName = info["targetName"]
             self.best_model = info["best_model"]
             self.generic_Model_Predictions = info["generic_Model_Predictions"]
-            self.specific_Model_Predicitos = info["specific_Model_Predicitos"]
+            self.specific_Model_Predicitons = info["specific_Model_Predicitons"]
         except:
             self.past_window = past_window
             self.featuresNames = featuresNames
             self.targetName = targetName
             self.best_model = "generic"
             self.generic_Model_Predictions = []
-            self.specific_Model_Predicitos = []
+            self.specific_Model_Predicitons = []
         
         try:
             self.userKnownDf  = pd.read_csv("Models/UserKnowDf", delimiter = ',')
@@ -65,18 +70,35 @@ class Consumption_Prediction:
         self.userKnownDf.to_csv("Models/UserKnowDf")
 
     
-    def evaluate_Previous(self, value):
-        pass
+    def genericVSspecific(self):
+        true = self.userKnownDf[self.targetName].iloc[-48:].values
         
+        generic_mae = mean_absolute_error(true, self.generic_Model_Predictions[-48])
+        specific_mae = mean_absolute_error(true, self.specific_Model_Predicitons[-48])
+
+        if generic_mae < specific_mae:
+            return "generic"
+        else:
+            return "specific"
+    
+    def retrain(self):
+
+        self.specific_Model.train(self.userKnownDf)
+
+        if self.best_model == "generic":
+            self.generic_Model.train(self.userKnownDf)
 
     
     def new_Record(self, record):
 
         self.append_record(record)
         
-        self.evaluate_Previous(record[self.targetName])
+        if self.best_model == "generic":
+            self.best_model = self.genericVSspecific()
 
         self.retrain()
+
+        self.make_new_prediction()
 
     
     
