@@ -1,4 +1,4 @@
-from Consumption_Model import ML_Model
+from Consumption.Consumption_Model import ML_Model
 from keras.preprocessing.sequence import TimeseriesGenerator
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
@@ -6,7 +6,7 @@ from keras.callbacks import EarlyStopping
 
 class Consumption_Generic_Model(ML_Model):
     
-    def __init__(self, modelPath="Models/Generic", past_window=24, featuresNames = [], targetName = None):
+    def __init__(self, modelPath="Consumption/Models/Generic", past_window=24, featuresNames = [], targetName = None):
         super().__init__(modelPath, past_window, featuresNames, targetName)
         self.x_scaler = self.load_model(self.modelPath + "/x_scaler.sav")
         self.y_scaler = self.load_model(self.modelPath + "/y_scaler.sav")

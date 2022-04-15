@@ -1,4 +1,4 @@
-from Consumption_Model import ML_Model
+from Consumption.Consumption_Model import ML_Model
 from sklearn.preprocessing import StandardScaler
 from keras.preprocessing.sequence import TimeseriesGenerator
 from sklearn.svm import SVR
@@ -6,7 +6,7 @@ from sklearn.svm import SVR
 
 class Consumption_Specific_Model(ML_Model):
     
-    def __init__(self, modelPath="Models/Specific", past_window=24, featuresNames = [], targetName = None):
+    def __init__(self, modelPath="Consumption/Models/Specific", past_window=24, featuresNames = [], targetName = None):
         super().__init__(modelPath, past_window, featuresNames, targetName)
         self.x_scaler = StandardScaler()
         self.y_scaler = StandardScaler()
