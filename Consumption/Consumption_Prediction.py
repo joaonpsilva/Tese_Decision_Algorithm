@@ -1,6 +1,6 @@
 import pandas as pd
-from Consumption_Generic_Model import Consumption_Generic_Model
-from Consumption_Specific_Model import Consumption_Specific_Model
+from Consumption.Consumption_Generic_Model import Consumption_Generic_Model
+from Consumption.Consumption_Specific_Model import Consumption_Specific_Model
 import json
 from sklearn.metrics import mean_absolute_error
 
@@ -17,11 +17,11 @@ class Consumption_Prediction:
         if self.best_model == "generic":
             self.generic_Model = Consumption_Generic_Model(past_window=past_window, featuresNames = featuresNames, targetName = targetName)
 
-
+        self.hourIndex = 0
 
     def load_details(self, past_window,featuresNames, targetName):
         try:
-            f = open("Models/Consumption_Model_Details.json")
+            f = open("Consumption/Models/Consumption_Model_Details.json")
             info = json.load(f)
             f.close()
 
@@ -40,7 +40,7 @@ class Consumption_Prediction:
             self.specific_Model_Predicitons = []
         
         try:
-            self.userKnownDf  = pd.read_csv("Models/UserKnowDf", delimiter = ',')
+            self.userKnownDf  = pd.read_csv("Consumption/Models/UserKnowDf.csv", delimiter = ',')
         except:
             self.userKnownDf = pd.DataFrame(data={key:[] for key in featuresNames})
     
@@ -52,12 +52,12 @@ class Consumption_Prediction:
             "targetName": self.targetName,
             "best_model": self.best_model,
             "generic_Model_Predictions": self.generic_Model_Predictions,
-            "specific_Model_Predicitos": self.specific_Model_Predicitos,
+            "specific_Model_Predicitos": self.specific_Model_Predicitons,
             }
         json_object = json.dumps(d, indent = 4)
         
         # Writing to sample.json
-        with open("Models/Consumption_Model_Details.json", "w") as outfile:
+        with open("Consumption/Models/Consumption_Model_Details.json", "w") as outfile:
             outfile.write(json_object)
     
     def append_record(self, record):
@@ -67,10 +67,14 @@ class Consumption_Prediction:
             self.userKnownDf = self.userKnownDf.iloc[1:]
         
         #save
-        self.userKnownDf.to_csv("Models/UserKnowDf")
+        self.userKnownDf.to_csv("Consumption/Models/UserKnowDf.csv", index=False)
 
     
     def genericVSspecific(self):
+
+        if len(self.specific_Model_Predicitons) < 48:
+            return "generic"
+
         true = self.userKnownDf[self.targetName].iloc[-48:].values
         
         generic_mae = mean_absolute_error(true, self.generic_Model_Predictions[-48])
@@ -87,25 +91,12 @@ class Consumption_Prediction:
 
         if self.best_model == "generic":
             self.generic_Model.train(self.userKnownDf)
-
-    
-    def new_Record(self, record):
-
-        self.append_record(record)
-        
-        if self.best_model == "generic":
-            self.best_model = self.genericVSspecific()
-
-        self.retrain()
-
-        self.make_new_prediction()
-
-    
     
     def make_new_prediction(self):
-
-        specific_prediction = self.specific_Model.predict_next(self.userKnownDf)
-        self.prediction = specific_prediction
+        
+        if self.hourIndex >= 7*24:
+            specific_prediction = self.specific_Model.predict_next(self.userKnownDf)
+            self.prediction = specific_prediction
 
         if self.best_model == "generic":
             generic_prediction = self.generic_Model.predict_next(self.userKnownDf)
@@ -113,7 +104,24 @@ class Consumption_Prediction:
         
 
         return self.prediction
+    
+    def new_Record(self, record):
+        
+        self.hourIndex += 1
 
+        self.append_record(record)
+        
+        if self.best_model == "generic":
+            self.best_model = self.genericVSspecific()
+
+        if self.hourIndex % (7*24) == 0:
+            self.retrain()
+
+        if self.hourIndex >=24:
+            self.make_new_prediction()
+    
+    def get_Prediction(self):
+        return self.prediction
         
 
         
