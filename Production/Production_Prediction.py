@@ -9,7 +9,7 @@ class Production_Meter:
         
         self._solar_Panel_Area = solar_Panel_Area
 
-        self.df = pd.read_csv("London_Solar.csv", delimiter = ',')
+        self.df = pd.read_csv("Production/London_Solar.csv", delimiter = ',')
 
         self.df['PeriodStart'] = self.df.apply(lambda row : removeSecs(row['PeriodStart']), axis = 1)
         self.df['PeriodEnd'] = self.df.apply(lambda row : removeSecs(row['PeriodEnd']), axis = 1)
@@ -30,7 +30,7 @@ class Production_Meter:
     def solar_Panel_Area(self, value):
         self._solar_Panel_Area = value
 
-    def make_Prediction(self):
+    def get_Meter_Value(self):
         
         #"irradiação normal direta no intervalo em watts por metro quadrado"
         dni = self.df.iloc[self.i]["Dni"]
