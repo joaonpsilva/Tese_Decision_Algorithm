@@ -1,6 +1,6 @@
 class EV:
     
-    def __init__(self, soc=0, charge_Rate=0, batterry_Threshold = 0.3):
+    def __init__(self, soc=0, batterry_Threshold = 0.3, charge_Rate=None):
         
         self._soc = soc
         self._charge_Rate = charge_Rate
