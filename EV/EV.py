@@ -6,6 +6,11 @@ class EV:
         self._charge_Rate = charge_Rate
         self._batterry_Threshold = batterry_Threshold
         self._departure_Time = None
+    
+    def __repr__(self) -> str:
+
+        return "EV - Soc:{soc}, batterry_Threshold:{batterry_Threshold}, departure_Time:{departure_Time}"\
+            .format(soc=self.soc,batterry_Threshold=self.batterry_Threshold,departure_Time=self.departure_Time)
 
     @property
     def soc(self):
