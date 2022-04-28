@@ -1,11 +1,8 @@
 from Consumption.Consumption_Prediction import Consumption_Prediction
 from Consumption.Consumption_Meter import Consumption_Meter
-from EV import EV_Garage
+from EV.EV_Garage import EV_Garage
 from Production.Production_Prediction import Production_Meter
-import os
-import pandas as pd
 from datetime import datetime, timedelta
-import random
 import numpy as np
 
 consumption_Meter = Consumption_Meter()
@@ -27,13 +24,16 @@ ev_Garage = EV_Garage(3)
 while True:
     print("------------------Date: ", current_Date)
 
-    current_Consumption = consumption_Meter.get_Meter_Value()
-    consumption_Prediction.new_Record(current_Consumption)
+    consumption_Current_Value = consumption_Meter.get_Meter_Value()
+    
+    consumption_Prediction.new_Record(consumption_Current_Value)
+    consumption_Prediction_Value = consumption_Prediction.get_Prediction()
 
-    print("Consumption Prediction: ", consumption_Prediction.get_Prediction())
+    ev_Garage.next(current_Date)
+    print("Consumption Meter: ", consumption_Current_Value["use"])
+    print("Consumption Prediction: ", consumption_Prediction_Value)
     print("Production Value: ", production_meter.get_Meter_Value())
-
-    ev_Garage.next()
+    print("Connected Vehicles ", ev_Garage.get_Current_Vehicles())
 
     current_Date = current_Date + timedelta(hours=1)
 
