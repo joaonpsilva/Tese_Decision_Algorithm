@@ -2,7 +2,7 @@ from EV import EV
 from Stationary_Battery import Stationary_Battery
 from Consumption.Consumption_Prediction import Consumption_Prediction
 from Production.Production_Prediction import Production_Meter
-from datetime import datetime, timedelta
+from datetime import timedelta
 from Decision import Decision
 from Priority_Object import Priority_Object
 
@@ -10,49 +10,79 @@ class Decision_Alg:
     
     def __init__(self):
 
-        self.production_Model = Production_Meter()
-        self.consumption_Model = Consumption_Prediction()
-        self.stationary_Battery = Stationary_Battery()
         self.connected_EVs = []
-        self.current_Time = None
 
         self.receive_Priority = []
         self.give_Priority = []
     
-    def define_receive_Priority(self):
-        
-        self.receive_Priority.append(Priority_Object("Consumption", 0, 0))
+    def analyse(self, context):
 
+
+        expected_error = 1
+        expected_remaining =  context.pruction - (context.consumption + expected_error)
+
+        self.define_receive_Priority(context.current_Time,
+                                       expected_remaining,
+                                       context.stationary_Battery)
+
+        self.define_give_Priority(expected_remaining,
+                                       context.stationary_Battery)
+        
+        self.make_Deciosions()
+
+    
+    def define_receive_Priority(self, current_Time, expected_remaining, stationary_Battery):
+
+        #ENERGY CONSUMPTION    
+        self.receive_Priority.append(Priority_Object("Consumption", 0, -1))
+
+        #EVS WITH LOW BATTERY
         needing_charge = [ev for ev in self.connected_EVS if ev.soc < ev.batterry_Threshold]
         needing_charge.sort(key=lambda x: x.departure_Time)
         for ev in needing_charge:
             charge_needed = ev.batterry_Threshold - ev.soc
-            time_diff = ev.departure_Time - self.current_Time
-            time2charge = charge_needed / charge_needed
+            time_diff = ev.departure_Time - current_Time
+            time2charge = charge_needed / ev.charge_Rate
 
             if time2charge - time_diff < timedelta(hours=2):
                 self.receive_Priority.append(Priority_Object(ev, 0, charge_needed))
             else:
                 self.receive_Priority.append(Priority_Object(ev, 1, charge_needed))
-        
-        self.receive_Priority.append(Priority_Object(self.stationary_Battery, 2, 0))
 
+        #STATIONARY BATTERY
+        if expected_remaining < 0 and stationary_Battery.current_Capacity < -expected_remaining: #house will need energy
+            energy_needed = expected_remaining - stationary_Battery.current_Capacity
+            self.receive_Priority.append(Priority_Object(stationary_Battery, 1, energy_needed))
+        
+        self.receive_Priority.append(Priority_Object(stationary_Battery, 2, -1))
+
+        #OTHER EVS
         for ev in self.connected_EVs:
             if ev not in needing_charge:
-                self.receive_Priority.append(Priority_Object(ev, 2, 0))
+                self.receive_Priority.append(Priority_Object(ev, 2, -1))
     
-    def define_give_Priority(self):
-        self.give_Priority.append(Priority_Object("Production", 0, 0))
+    def define_give_Priority(self, expected_remaining, stationary_Battery):
+
+        #PRODUCTION
+        self.give_Priority.append(Priority_Object("Production", 0, -1))
+        
+        #EVS with more charge
         dispending_charge = [ev for ev in self.connected_EVS if ev.soc > ev.batterry_Threshold]
         dispending_charge.sort(key=lambda x: x.soc - x.batterry_Threshold)
-
         for ev in dispending_charge:
             charge_dispendable = ev.soc - ev.batterry_Threshold
             self.give_Priority.append(Priority_Object(ev, 1, charge_dispendable))
         
-        self.give_Priority.append(Priority_Object(self.stationary_Battery, 2, 0))
+        #STATIONARY BATTERY
+        free_space_battery = stationary_Battery.max_Capacity - stationary_Battery.current_Capacity
+        if expected_remaining > 0 and free_space_battery < expected_remaining: #house will need energy
+            energy_dispending = expected_remaining - free_space_battery
+            self.receive_Priority.append(Priority_Object(stationary_Battery, 1, energy_dispending))
+        
+        self.receive_Priority.append(Priority_Object(stationary_Battery, 2, -1))
 
-        self.give_Priority.append(Priority_Object("Grid", 3, 0))
+        #GRID
+        self.give_Priority.append(Priority_Object("Grid", 3, -1))
 
     
     def make_Decisions(self):
@@ -94,74 +124,7 @@ class Decision_Alg:
                     decisions.append(Decision(obj_give, "give", obj_give.amount_kw))
                     
 
-                        
-                    
-
 
 #https://www.directenergyregulatedservices.com/blog/kw-vs-kwh-whats-difference
-
-
-    
-
-
-
-
-
-
-
-
-
-
-    
-    def make_Deciosions(self):
-
-        decisions = []
-            
-        needing_charge = [ev for ev in self.connected_EVS if ev.soc < ev.batterry_Threshold] 
-        for i in range(len(needing_charge)):
-            charge_needed = needing_charge[i].batterry_Threshold - needing_charge[i].soc
-
-            diff = needing_charge[i].departure_Time - self.current_Time
-            hour_difference = diff.total_seconds() / 3600
-            time2Charge = charge_needed / needing_charge[i].charge_Rate    #time in hours that ev needs to charge
-
-            #amount of time the vehicle does not need to be charging
-            canBNegleted_Time = hour_difference - time2Charge
-            needing_charge[i] = (needing_charge[i], charge_needed, canBNegleted_Time)
-        
-        needing_charge.sort(key=lambda x : x[2]) #sort by canBNegleted_Time
-        #vehicle needs to start cheging now (1 hour error)
-        needing_charge_Urgent = [ev for ev in needing_charge if ev[2] < 1]
-        needing_charge_Not_Urgent = needing_charge[len(needing_charge_Urgent):]
-
-
-        dispending_charge = [ev for ev in self.connected_EVS if ev.soc > ev.batterry_Threshold] 
-        dispending_charge.sort(key=lambda x: x.soc - x.batterry_Threshold, reverse=True)    #sort by dispendible energy (more first)
-
-
-        #TAKE CARE OF needing_charge_urgent
-        while len(needing_charge_Urgent) > 0:
-            #MAKE DECISIONS WITH TO EV
-            needing_charge_Urgent_EV, charge_needed, canBNegleted_Time = needing_charge_Urgent[0]
-
-            if len(dispending_charge) > 0:
-                dispending_charge_EV = dispending_charge[0]
-                dispandable_energy = dispending_charge_EV.soc - dispending_charge_EV.batterry_Threshold
-
-                energy_amount = charge_needed if charge_needed > dispandable_energy else dispandable_energy
-                decisions.append(Decision(needing_charge_Urgent_EV, dispending_charge_EV, energy_amount))
-
-            elif cond:
-                #battery
-                pass
-            else:
-                #rede
-                pass
-
-        
-        house_Consumption =  self.consumption_Model.prediction()
-        house_Production = self.production_Model.prediction()
-
-        needing_charge if house_Consumption > house_Production else dispending_charge.append()
 
 
