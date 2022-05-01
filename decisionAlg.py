@@ -6,7 +6,6 @@ class Decision_Alg:
     
     def __init__(self):
 
-        self.connected_EVs = []
 
         self.receive_Priority = []
         self.give_Priority = []
@@ -27,7 +26,7 @@ class Decision_Alg:
         self.receive_Priority.append(Priority_Object("Consumption", 3, context.consumption))
 
         #EVS WITH LOW BATTERY
-        needing_charge = [ev for ev in self.connected_EVS if ev.soc < ev.batterry_Threshold]
+        needing_charge = [ev for ev in context.connected_EVs if ev.soc < ev.batterry_Threshold]
         needing_charge.sort(key=lambda x: x.departure_Time)
         append_later = []
         for ev in needing_charge:
@@ -46,7 +45,7 @@ class Decision_Alg:
                 
                 total_dispending = 0
                 vehicles_leaving_soon = 0
-                for ev in self.connected_EVS:   
+                for ev in context.connected_EVs:   
                     if ev not in needing_charge:    #for evs dispending energy
                         time_diff = ev.departure_Time - context.current_Time
                        
@@ -73,7 +72,7 @@ class Decision_Alg:
         self.receive_Priority.append(Priority_Object(context.stationary_Battery, 1, free_battery_space))
 
         #OTHER EVS
-        for ev in self.connected_EVs:
+        for ev in context.connected_EVs:
             if ev not in needing_charge:
                 free_space = ev.battery_size - ev.socKWH()
                 self.receive_Priority.append(Priority_Object(ev, 1, free_space))
@@ -95,7 +94,7 @@ class Decision_Alg:
             self.receive_Priority.append(Priority_Object(context.stationary_Battery, 1, energy_dispending))
         
         #EVS with more charge
-        dispending_charge = [ev for ev in self.connected_EVS if ev.soc > ev.batterry_Threshold]
+        dispending_charge = [ev for ev in context.connected_EVs if ev.soc > ev.batterry_Threshold]
         dispending_charge.sort(key=lambda x: x.departure_Time)  #usar os q vao sair primeiro?
         for ev in dispending_charge:
             charge_dispendable = ev.socKWH() - ev.batterry_ThresholdKWH()
