@@ -1,16 +1,27 @@
 class EV:
     
-    def __init__(self, soc=0, batterry_Threshold = 0.3, charge_Rate=None):
+    def __init__(self, soc=0, batterry_Threshold = 0.3, charge_Rate = 1, battery_size = 16):
         
         self._soc = soc
         self._charge_Rate = charge_Rate
         self._batterry_Threshold = batterry_Threshold
         self._departure_Time = None
+        self._battery_size = battery_size
     
     def __repr__(self) -> str:
 
         return "EV - Soc:{soc}, batterry_Threshold:{batterry_Threshold}, departure_Time:{departure_Time}"\
             .format(soc=self.soc,batterry_Threshold=self.batterry_Threshold,departure_Time=self.departure_Time)
+
+    def socKWH(self):
+        return self.soc * self._battery_size
+        
+    def batterry_ThresholdKWH(self):
+        return self.batterry_Threshold * self._battery_size
+
+    @property
+    def battery_size(self):
+        return self._battery_size
 
     @property
     def soc(self):
