@@ -16,11 +16,9 @@ class EV_Garage:
     #consoante hora probabilidade de ec sair / chegar, mesmo ev nao tem q seguir um padrao
     def next(self, current_Date):
         #Evs leaving
-        for ev_info in self.current_Evs:
-            ev_info["dep_Time"] -= 1
-            if ev_info["dep_Time"] == 0:
-                #print("EV LEFT" + str(ev_info["ev"]))
-                self.current_Evs.remove(ev_info)
+        for ev_info in list(self.current_Evs):
+            ev_info["dep_Time"] -= 1        
+        self.current_Evs = [ev_info for ev_info in self.current_Evs if ev_info["dep_Time"] > 0]
 
         #Evs arriving
         if len(self.current_Evs) < self.max_Evs:
