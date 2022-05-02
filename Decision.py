@@ -4,6 +4,9 @@ class Decision:
         self._obj = obj
         self._mode = mode
         self._energy_amount = energy_amount
+    
+    def __repr__(self) -> str:
+        return "DECISION: {obj} will {mode} {energy_amount}".format(obj=self.obj, mode=self.mode, energy_amount=self.energy_amount)
 
     @property
     def obj(self):

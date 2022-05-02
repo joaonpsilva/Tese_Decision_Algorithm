@@ -4,6 +4,9 @@ class Stationary_Battery:
         
         self._max_Capacity = max_Capacity
         self._current_Capacity = 0
+    
+    def __repr__(self) -> str:
+        return "Stationary_Battery_{current_Capacity}KWh".format(current_Capacity=self.current_Capacity)
 
     @property
     def max_Capacity(self):
