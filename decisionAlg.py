@@ -41,7 +41,7 @@ class Decision_Alg:
             m = time2charge - h
             time2charge = timedelta(hours=h, minutes=60*m)
 
-            if time2charge - time_diff < timedelta(hours=2):
+            if time_diff - time2charge < timedelta(hours=2):
                 self.receive_Priority.append(Priority_Object(ev, 3, charge_needed))
             else:
                 append_later.append(Priority_Object(ev, 2, charge_needed))
@@ -60,7 +60,7 @@ class Decision_Alg:
                         time_diff = ev.departure_Time - context["current_Time"]
                        
                         #EV wont leave soon
-                        if time_diff >= timedelta(hours=1):     
+                        if time_diff >= timedelta(hours=2):     
                             charge_dispending = ev.socKWH() - ev.batterry_ThresholdKWH()
                             total_dispending += charge_dispending
                         else:
