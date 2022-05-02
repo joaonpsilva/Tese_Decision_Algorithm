@@ -1,6 +1,7 @@
 from EV.EV import EV
 import random
 import numpy as np
+from datetime import timedelta
 
 class EV_Garage:
     def __init__(self, max_Evs) -> None:
@@ -43,8 +44,8 @@ class EV_Garage:
 
                 soc = round(np.random.triangular(1, 3, 100, size=None))
                 
-                ev = EV(soc, batterry_Threshold=charge_needed)
-                ev.departure_Time = departure_guess
+                ev = EV(soc/100, batterry_Threshold=charge_needed/100)
+                ev.departure_Time = current_Date + timedelta(hours=departure_guess)
 
                 ev_info = {"dep_Time":departure_Time, "ev": ev}
                 self.current_Evs.append(ev_info)
