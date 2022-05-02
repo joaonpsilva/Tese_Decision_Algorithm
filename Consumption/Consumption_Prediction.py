@@ -59,6 +59,9 @@ class Consumption_Prediction:
         # Writing to sample.json
         with open("Consumption/Models/Consumption_Model_Details.json", "w") as outfile:
             outfile.write(json_object)
+        
+        #save
+        self.userKnownDf.to_csv("Consumption/Models/UserKnowDf.csv", index=False)
     
     def append_record(self, record):
         #append record
@@ -66,9 +69,6 @@ class Consumption_Prediction:
         if len(self.userKnownDf) > 24*365:
             self.userKnownDf = self.userKnownDf.iloc[1:]
         
-        #save
-        self.userKnownDf.to_csv("Consumption/Models/UserKnowDf.csv", index=False)
-
     
     def genericVSspecific(self):
 
@@ -117,7 +117,7 @@ class Consumption_Prediction:
         if self.hourIndex % (7*24) == 0:
             self.retrain()
 
-        if self.hourIndex >=24:
+        if self.hourIndex > 24:
             self.make_new_prediction()
     
     def get_Prediction(self):

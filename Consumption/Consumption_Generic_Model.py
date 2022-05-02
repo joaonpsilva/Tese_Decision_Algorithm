@@ -41,6 +41,8 @@ class Consumption_Generic_Model(ML_Model):
         self.do_train(train_generator)
 
     def predict_next(self, df):
+
+        #if df only contains 24hours should add 1 more radom value to x_test
         x_test = self.x_scaler.transform(df[self.featuresNames].iloc[-(self.past_window + 1):].values)
         y_test = [0 for i in range(self.past_window+1)] #doesnt matter
         test_generator = TimeseriesGenerator(x_test, y_test, length=self.past_window, batch_size=1)
