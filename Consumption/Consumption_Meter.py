@@ -24,4 +24,8 @@ class Consumption_Meter:
     
     def get_Meter_Value(self):
         self.index += 1
+
         return self.consumptionDF.iloc[self.index]
+    
+    def revert_Step(self):
+        self.index -= 1
