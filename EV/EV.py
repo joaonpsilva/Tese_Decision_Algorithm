@@ -1,35 +1,31 @@
+from Battery import Battery
+
 class EV:
     
-    def __init__(self, soc=0, batterry_Threshold = 0.3, charge_Rate = 1, battery_size = 16):
+    def __init__(self, soc=0, battery_size = 16, charge_Rate = 1, batterry_Threshold = 0.3 ):
         
-        self._soc = soc
-        self._charge_Rate = charge_Rate
         self._batterry_Threshold = batterry_Threshold
         self._departure_Time = None
-        self._battery_size = battery_size
+        self._battery = Battery(soc, battery_size, charge_Rate, battery_price=5000)
+
     
     def __repr__(self) -> str:
 
         return "EV - Soc:{soc}, batterry_Threshold:{batterry_Threshold}, departure_Time:{departure_Time}"\
-            .format(soc=self.soc,batterry_Threshold=self.batterry_Threshold,departure_Time=self.departure_Time)
-
-    def socKWH(self):
-        return self.soc * self._battery_size
+            .format(soc=self.battery.soc,batterry_Threshold=self.batterry_Threshold,departure_Time=self.departure_Time)
         
+    
+    def charge(self, amount):
+        self.battery.charge(amount)
+    
+    def discharge(self, amount):
+        self.battery.discharge(amount)
+
+
+    @property
     def batterry_ThresholdKWH(self):
-        return self.batterry_Threshold * self._battery_size
-
-    @property
-    def battery_size(self):
-        return self._battery_size
-
-    @property
-    def soc(self):
-        return self._soc
-
-    @property
-    def charge_Rate(self):
-        return self._charge_Rate
+        return self._batterry_Threshold * self.battery.battery_size
+    
 
     @property
     def batterry_Threshold(self):
@@ -38,14 +34,11 @@ class EV:
     @property
     def departure_Time(self):
         return self._departure_Time
+    
+    @property
+    def battery(self):
+        return self._battery
 
-    @soc.setter
-    def soc(self, value):
-        self._soc = value
-
-    @charge_Rate.setter
-    def charge_Rate(self, value):
-        self._charge_Rate = value
 
     @batterry_Threshold.setter
     def batterry_Threshold(self, value):
@@ -54,3 +47,7 @@ class EV:
     @departure_Time.setter
     def departure_Time(self, value):
         self._departure_Time = value
+    
+    @battery.setter
+    def battery(self, value):
+        self._battery = value
