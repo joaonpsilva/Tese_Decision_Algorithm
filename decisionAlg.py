@@ -5,20 +5,32 @@ from Priority_Object import Priority_Object
 class Decision_Alg:
     
     def __init__(self):
-
+        pass
+    
+    def analyse(self, context):
 
         self.receive_Priority = []
         self.give_Priority = []
-    
-    def analyse(self, context):
 
         expected_error = 1
         expected_remaining =  context["production"] - (context["consumption"] + expected_error)
 
         self.define_receive_Priority(context, expected_remaining)
         self.define_give_Priority(context, expected_remaining)
-        
+
+        # SIMULATION CORRECTION
+        simulation_Error = context["Real_consumption"] - context["consumption"]
+
+        if simulation_Error > 0:    #consumption was actually bigger than expected
+            self.receive_Priority.append(Priority_Object("Consumption", 3, simulation_Error))
+
+
         decisions = self.make_Decisions()
+
+        #Give back energy wasnt used SIMULATION CORRECTION
+        if simulation_Error < 0:  #consumption was smaller than expected
+            decision = next((d for d in decisions if d.mode == "discharge"), None)
+            decision.energy_amount += simulation_Error
 
         return decisions
 
@@ -148,13 +160,13 @@ class Decision_Alg:
                     obj_give.amount_kw -= obj_receive.amount_kw
 
                     if obj_give.amount_kw >= 0: #can give more, receiver is satisfied
-                        decisions.append(Decision(obj_receive.object, "receive", obj_receive.amount_kw))
-                        decisions.append(Decision(obj_give.object, "give", obj_receive.amount_kw))
+                        decisions.append(Decision(obj_receive.object, "charge", obj_receive.amount_kw))
+                        decisions.append(Decision(obj_give.object, "discharge", obj_receive.amount_kw))
                         break
                     else:   #giver doesnt have enough, receiver is not satisfied
                         #CHECK IF CAN DO THIS
-                        decisions.append(Decision(obj_receive.object, "receive", obj_give_amount_kw_temp))
-                        decisions.append(Decision(obj_give.object, "give", obj_give_amount_kw_temp))
+                        decisions.append(Decision(obj_receive.object, "charge", obj_give_amount_kw_temp))
+                        decisions.append(Decision(obj_give.object, "discharge", obj_give_amount_kw_temp))
                         obj_receive.amount_kw -= obj_give_amount_kw_temp
 
         return decisions            
