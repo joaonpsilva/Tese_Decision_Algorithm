@@ -37,13 +37,13 @@ class Production_Meter:
         self.i += 1
 
         #"valores mais comuns para a performance de células fotovoltaicas"
-        r = 0.15 
+        r = 15
 
         #"desprezável o fator de idade do painel, ou seja, não é considerada a deterioração do mesmo ao longo do tempo"
-        p = 0.75
+        p = 0.8
         E = self._solar_Panel_Area * r * dni * p
 
-        return E
+        return E / 1000
 
 if __name__ == "__main__":
     from datetime import datetime, timedelta
