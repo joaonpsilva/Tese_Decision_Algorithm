@@ -5,6 +5,7 @@ from Production.Production_Prediction import Production_Meter
 from datetime import datetime, timedelta
 from Battery import Battery
 from decisionAlg import Decision_Alg
+from decisionAlg_Dummer import Decision_Alg_Dummer
 from Grid import Grid_Linear
 
 consumption_Meter = Consumption_Meter()
@@ -30,6 +31,9 @@ grid = Grid_Linear()
 
 #Decision
 decision_algorithm = Decision_Alg()
+
+total_cost = 0
+i = 0
 
 while True:
 
@@ -75,6 +79,9 @@ while True:
         for decision in decisions:
             print(decision)
 
+            if decision.obj == "Grid" and decision.mode == "discharge":
+                total_cost += grid.kwh_price * decision.energy_amount
+
             if isinstance(decision.obj, str):
                 continue
             
@@ -82,6 +89,11 @@ while True:
 
 
     current_Date = current_Date + timedelta(hours=1)
+    i += 1
+    if i == 30*24:
+        break
+
+print("TOTAL COST: ", total_cost)
 
 
 
