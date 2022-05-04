@@ -32,13 +32,11 @@ grid = Grid_Linear()
 decision_algorithm = Decision_Alg()
 
 while True:
-    print("------------------Date: ", current_Date)
 
     consumption_Current_Value = consumption_Meter.get_Meter_Value()
     consumption_Next_Value = consumption_Meter.get_Meter_Value()
     consumption_Meter.revert_Step()
 
-    
     consumption_Prediction.new_Record(consumption_Current_Value)
     consumption_Prediction_Value = consumption_Prediction.get_Prediction()
     try:
@@ -49,23 +47,29 @@ while True:
     production_Current_Value = production_meter.get_Meter_Value()
 
     ev_Garage.next(current_Date)
-    print("Consumption Prediction: ", consumption_Prediction_Value)
-    print("Consumption Real value: ", consumption_Next_Value["use"])
-    print("Production Value: ", production_Current_Value)
-    print("Connected Vehicles ", ev_Garage.get_Current_Vehicles())
-
-    context = {
-        "consumption": consumption_Prediction_Value,
-        "production": production_Current_Value,
-        "connected_EVs":ev_Garage.get_Current_Vehicles(),
-        "current_Time":current_Date,
-        "stationary_Battery": stationary_battery,
-        "grid": grid,
-        "Real_consumption": consumption_Next_Value["use"]
-    }
-
+    
+    
     if consumption_Prediction_Value != None:
-        print()
+        print("\n------------------Date: ", current_Date, "----------------------------------------")
+        print("Consumption Prediction: ", consumption_Prediction_Value)
+        print("Consumption Real value: ", consumption_Next_Value["use"])
+        print("Production Value: ", production_Current_Value)
+        print("Connected Vehicles ", ev_Garage.get_Current_Vehicles())
+        print("Stationary Battery ", stationary_battery)
+
+
+        context = {
+                "consumption_prediction": consumption_Prediction_Value,
+                "production": production_Current_Value,
+                "connected_EVs":ev_Garage.get_Current_Vehicles(),
+                "current_Time":current_Date,
+                "stationary_Battery": stationary_battery,
+                "grid": grid,
+                "Real_consumption": consumption_Next_Value["use"]
+            }
+
+        print("\n-----------DECISIONS-----------\n")
+
         decisions = decision_algorithm.analyse(context)
 
         for decision in decisions:
