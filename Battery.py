@@ -1,7 +1,8 @@
 class Battery:
 
-    def __init__(self, soc = 0, battery_size = 50, charge_Rate = 1, battery_price = 10000, cycles = 5000):
+    def __init__(self, soc = 0, battery_size = 50, charge_Rate = 5, battery_price = 10000, cycles = 5000):
         
+        #https://thenextweb.com/news/ev-battery-basics-kw-kwh-electric-vehicle-charging-lingo
         self._charge_Rate = charge_Rate
         self._battery_size = battery_size
         self._current_Capacity = battery_size * soc
@@ -31,7 +32,7 @@ class Battery:
 
     @property
     def soc(self):
-        return self.current_Capacity / self.battery_size
+        return round(self.current_Capacity / self.battery_size,2)
 
     @property
     def charge_Rate(self):

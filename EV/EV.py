@@ -2,7 +2,7 @@ from Battery import Battery
 
 class EV:
     
-    def __init__(self, soc=0, battery_size = 16, charge_Rate = 1, batterry_Threshold = 0.3 ):
+    def __init__(self, soc=0, battery_size = 24, charge_Rate = 1, batterry_Threshold = 0.3 ):
         
         self._batterry_Threshold = batterry_Threshold
         self._departure_Time = None
