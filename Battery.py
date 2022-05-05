@@ -54,3 +54,13 @@ class Battery:
     @battery_size.setter
     def battery_size(self, value):
         self._battery_size = value
+    
+    @soc.setter
+    def soc(self, value):
+        if value > 1:
+            value = 1
+        if value < 0:
+            value = 0
+        self._current_Capacity = self.battery_size * value
+
+        

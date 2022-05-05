@@ -35,8 +35,9 @@ class Decision_Alg:
 
         #Give back energy wasnt used SIMULATION CORRECTION
         if context["consumption_prediction"] is not None and simulation_Error < 0:  #consumption was smaller than expected
-            decision = next((d for d in decisions if d.mode == "discharge"), None)
-            decision.energy_amount += simulation_Error
+            decision = next((d for d in decisions if d.mode == "discharge" and not isinstance(d.obj, str)), None)
+            if decision is not None:
+                decision.energy_amount += simulation_Error
 
         return decisions
 
@@ -62,7 +63,7 @@ class Decision_Alg:
 
             #charge rate is amx that can charge in 1H
             e = min([charge_needed, ev.battery.charge_Rate])
-            if time_diff - time2charge <= timedelta(hours=3):   #Account for error
+            if time_diff - time2charge <= timedelta(hours=5):   #Account for error
                 self.receive_Priority.append(Priority_Object(ev, 3, e))
             else:
                 append_later.append(Priority_Object(ev, 2, e))
