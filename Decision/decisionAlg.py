@@ -1,6 +1,6 @@
 from datetime import timedelta
-from Decision import Decision
-from Priority_Object import Priority_Object
+from Decision.Decision import Decision
+from Decision.Priority_Object import Priority_Object
 
 class Decision_Alg:
     
@@ -73,23 +73,20 @@ class Decision_Alg:
 
         #STATIONARY BATTERY
         if expected_remaining is not None and expected_remaining < 0:#house will need energy
-            if context["stationary_Battery"].current_Capacity < -expected_remaining * 2:#battery does not contain a lot of energy
+            if context["stationary_Battery"].current_Capacity < -expected_remaining + 3:#battery does not contain a lot of energy
                 
                 total_dispending = 0
-                vehicles_leaving_soon = 0
                 for ev in context["connected_EVs"]:   
                     if ev not in needing_charge:    #for evs dispending energy
                         time_diff = ev.departure_Time - context["current_Time"]
                        
                         #EV wont leave soon
-                        if time_diff >= timedelta(hours=2):     
+                        if time_diff >= timedelta(hours=4):     
                             charge_dispending = ev.battery.current_Capacity - ev.batterry_ThresholdKWH
                             total_dispending += charge_dispending
-                        else:
-                            vehicles_leaving_soon += 1
                             
-                if total_dispending < -expected_remaining and vehicles_leaving_soon > 0:
-                    energy_needed = (-expected_remaining * 2) - context["stationary_Battery"].current_Capacity
+                if total_dispending < -expected_remaining + 3:
+                    energy_needed = (-expected_remaining + 3) - context["stationary_Battery"].current_Capacity
                     free_battery_space = context["stationary_Battery"].battery_size - context["stationary_Battery"].current_Capacity
 
                     #charge rate is max that can charge in 1H
@@ -121,14 +118,6 @@ class Decision_Alg:
         #PRODUCTION
         self.give_Priority.append(Priority_Object("Production", 0, context["production"]))
 
-        #if grid really low price fill everything?
-
-        #STATIONARY BATTERY SPECIAL CASE
-        free_space_battery = context["stationary_Battery"].battery_size - context["stationary_Battery"].current_Capacity
-        if expected_remaining is not None and expected_remaining > 0 and free_space_battery < expected_remaining: #house will produce more energy
-            energy_dispending = expected_remaining - free_space_battery
-            e = min([context["stationary_Battery"].charge_Rate, energy_dispending] )
-            self.give_Priority.append(Priority_Object(context["stationary_Battery"], 1, e))
         
         #EVS with more charge
         dispending_charge = [ev for ev in context["connected_EVs"] if ev.battery.soc > ev.batterry_Threshold and ev.battery.kwh_price < context["grid"].kwh_price]
@@ -139,20 +128,36 @@ class Decision_Alg:
             
             e = min([ev.battery.charge_Rate, charge_dispendable] )
             
-            if time_diff <= timedelta(hours=2):     
+            if time_diff <= timedelta(hours=4):     
                 self.give_Priority.append(Priority_Object(ev, 1.5, e))
             else:
                 self.give_Priority.append(Priority_Object(ev, 2, e))
+
         
         #STATIONARY BATTERY
-        grid_P = 2
-        if context["stationary_Battery"].kwh_price < context["grid"].kwh_price:
-            e = min([context["stationary_Battery"].charge_Rate, context["stationary_Battery"].current_Capacity] )
+        #STATIONARY BATTERY SPECIAL CASE
+        free_space_battery = context["stationary_Battery"].battery_size - context["stationary_Battery"].current_Capacity
+        e = 0
+        if expected_remaining is not None and expected_remaining > 0 and free_space_battery < expected_remaining: #house will produce more energy
+            energy_dispending = expected_remaining - free_space_battery
+            e = min([context["stationary_Battery"].charge_Rate, energy_dispending] )
+            self.give_Priority.append(Priority_Object(context["stationary_Battery"], 1, e))
+        
+        if context["stationary_Battery"].kwh_price < context["grid"].kwh_price: #charging battery costs less than grid
+            e = min([context["stationary_Battery"].charge_Rate, context["stationary_Battery"].current_Capacity - e] )
             self.give_Priority.append(Priority_Object(context["stationary_Battery"], 2, e))
-            grid_P = 3
 
         #GRID
+        #if grid really low price fill everything?
+        if context["grid"].kwh_price <= 0.005:
+            grid_P = 1
+        elif context["stationary_Battery"].kwh_price > context["grid"].kwh_price or context["grid"].kwh_price <= 0.5 * context["grid"].average_kwh_price:
+            grid_P = 2
+        else:
+            grid_P = 3
         self.give_Priority.append(Priority_Object("Grid", grid_P, 99999999))
+
+        self.give_Priority.sort(key=lambda x: x.priority)
 
 
 
@@ -164,7 +169,6 @@ class Decision_Alg:
         print()
         print("GIVE: ", self.give_Priority)
         print()
-
 
         for obj_receive in self.receive_Priority:
             

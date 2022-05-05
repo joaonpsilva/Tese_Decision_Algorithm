@@ -1,6 +1,6 @@
 from datetime import timedelta
-from Decision import Decision
-from Priority_Object import Priority_Object
+from Decision.Decision import Decision
+from Decision.Priority_Object import Priority_Object
 
 class Decision_Alg_Dumber:
     
