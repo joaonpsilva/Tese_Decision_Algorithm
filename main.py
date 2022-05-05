@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from Battery import Battery
 from Decision.decisionAlg import Decision_Alg
 from Decision.decisionAlg_Dumber import Decision_Alg_Dumber
-from Grid import Grid_Linear
+from Grid import Grid_Linear, Grid_sinusoidal
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -33,7 +33,7 @@ ev_Garage = EV_Garage(args.ev)
 stationary_battery = Battery(battery_size = 50)
 
 #GRID
-grid = Grid_Linear()
+grid = Grid_sinusoidal()
 
 #Decision
 if args.alg == "smart":
@@ -67,6 +67,9 @@ while True:
 
     #Evs
     ev_Garage.next(current_Date)
+
+    #Grid
+    grid.update(current_Date)
 
     print("\n------------------Date: ", current_Date, "----------------------------------------")
     print("Consumption Prediction: ", consumption_Prediction_Value)
