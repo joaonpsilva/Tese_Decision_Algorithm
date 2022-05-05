@@ -2,7 +2,7 @@ from datetime import timedelta
 from Decision import Decision
 from Priority_Object import Priority_Object
 
-class Decision_Alg_Dummer:
+class Decision_Alg_Dumber:
     
     def __init__(self):
         pass
@@ -25,24 +25,12 @@ class Decision_Alg_Dummer:
         #ENERGY CONSUMPTION    
         self.receive_Priority.append(Priority_Object("Consumption", 3, context["Real_consumption"]))
 
-        #EVS WITH LOW BATTERY
-        needing_charge = [ev for ev in context["connected_EVs"] if ev.battery.soc < ev.batterry_Threshold]
-        needing_charge.sort(key=lambda x: x.departure_Time)
-        for ev in needing_charge:
-            charge_needed = ev.batterry_ThresholdKWH - ev.battery.current_Capacity
-            
-            #charge rate is amx that can charge in 1H
-            e = min([charge_needed, ev.battery.charge_Rate])
-            self.receive_Priority.append(Priority_Object(ev, 3, e))
-        
-        #OTHER EVS
+        #EVS
         for ev in context["connected_EVs"]:
-            if ev not in needing_charge:
-                free_space = ev.battery.battery_size - ev.battery.current_Capacity
-                e = min([ev.battery.charge_Rate, free_space] )
-                self.receive_Priority.append(Priority_Object(ev, 2, e))
-        
-        
+            free_battery_space = ev.battery.battery_size - ev.battery.current_Capacity
+            e = min([free_battery_space, ev.battery.charge_Rate])
+            self.receive_Priority.append(Priority_Object(ev, 3, e))
+ 
         #STATIONARY BATTERY
         free_battery_space = context["stationary_Battery"].battery_size - context["stationary_Battery"].current_Capacity
         e = min([context["stationary_Battery"].charge_Rate,free_battery_space] )
@@ -57,8 +45,6 @@ class Decision_Alg_Dummer:
 
         #PRODUCTION
         self.give_Priority.append(Priority_Object("Production", 0, context["production"]))
-
-        #if grid really low price fill everything?
         
         #STATIONARY BATTERY
         e = min([context["stationary_Battery"].charge_Rate, context["stationary_Battery"].current_Capacity] )
