@@ -5,3 +5,7 @@ class Grid_Linear:
     @property
     def kwh_price(self):
         return 0.2
+    
+    @property
+    def average_kwh_price(self):
+        return 0.2
