@@ -4,13 +4,13 @@ from EV.EV_Garage import EV_Garage
 from Production.Production_Prediction import Production_Meter
 from datetime import datetime, timedelta
 from Battery import Battery
-from decisionAlg import Decision_Alg
-from decisionAlg_Dumber import Decision_Alg_Dumber
+from Decision.decisionAlg import Decision_Alg
+from Decision.decisionAlg_Dumber import Decision_Alg_Dumber
 from Grid import Grid_Linear
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-ev", type=int, default = 2, help="number of Evs")
+parser.add_argument("-ev", type=int, default = 3, help="number of Evs")
 parser.add_argument("-alg", type=str, default="smart", choices=["smart", "dumb"], help="Decision algorithm")
 args = parser.parse_args()
 
@@ -24,7 +24,7 @@ past_window = 24
 consumption_Prediction = Consumption_Prediction(past_window, featuresNames, targetName)
 
 #PRODUCTION
-production_meter = Production_Meter(current_Date, solar_Panel_Area=9)
+production_meter = Production_Meter(current_Date, solar_Panel_Area=15)
 
 #EVS
 ev_Garage = EV_Garage(args.ev)
