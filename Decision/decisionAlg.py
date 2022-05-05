@@ -163,6 +163,9 @@ class Decision_Alg:
 
     def make_Decisions(self):
 
+        self.give_Priority = [obj for obj in self.give_Priority if obj.amount_kw > 0]
+        self.receive_Priority = [obj for obj in self.receive_Priority if obj.amount_kw > 0]
+
         decisions = []
         
         print("RECEIVE: ", self.receive_Priority)
