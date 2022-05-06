@@ -32,9 +32,10 @@ class Decision_Alg_Dumber:
             self.receive_Priority.append(Priority_Object(ev, 3, e))
  
         #STATIONARY BATTERY
-        free_battery_space = context["stationary_Battery"].battery_size - context["stationary_Battery"].current_Capacity
-        e = min([context["stationary_Battery"].charge_Rate,free_battery_space] )
-        self.receive_Priority.append(Priority_Object(context["stationary_Battery"], 1, e))
+        for battery in context["stationary_Batteries"]:
+            free_battery_space = battery.battery_size - battery.current_Capacity
+            e = min([battery.charge_Rate,free_battery_space] )
+            self.receive_Priority.append(Priority_Object(battery, 1, e))
         
         self.receive_Priority.append(Priority_Object("Grid", 0, 99999999))
 
@@ -47,8 +48,9 @@ class Decision_Alg_Dumber:
         self.give_Priority.append(Priority_Object("Production", 0, context["production"]))
         
         #STATIONARY BATTERY
-        e = min([context["stationary_Battery"].charge_Rate, context["stationary_Battery"].current_Capacity] )
-        self.give_Priority.append(Priority_Object(context["stationary_Battery"], 2, e))
+        for battery in context["stationary_Batteries"]:
+            e = min([battery.charge_Rate, battery.current_Capacity] )
+            self.give_Priority.append(Priority_Object(battery, 2, e))
 
         #GRID
         self.give_Priority.append(Priority_Object("Grid", 3, 99999999))
@@ -62,11 +64,8 @@ class Decision_Alg_Dumber:
 
         decisions = []
         
-        print("RECEIVE: ", self.receive_Priority)
-        print()
-        print("GIVE: ", self.give_Priority)
-        print()
-
+        #print("RECEIVE: ", self.receive_Priority, "\n")
+        #print("GIVE: ", self.give_Priority, "\n")
 
         for obj_receive in self.receive_Priority:
             
