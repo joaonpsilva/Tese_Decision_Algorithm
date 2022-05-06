@@ -9,7 +9,7 @@ class Production_Meter:
         
         self._solar_Panel_Area = solar_Panel_Area
 
-        self.df = pd.read_csv("Production/London_Solar.csv", delimiter = ',')
+        self.df = pd.read_csv("Production/Portugal_Solar.csv", delimiter = ',')
 
         self.df['PeriodStart'] = self.df.apply(lambda row : removeSecs(row['PeriodStart']), axis = 1)
         self.df['PeriodEnd'] = self.df.apply(lambda row : removeSecs(row['PeriodEnd']), axis = 1)
@@ -32,12 +32,14 @@ class Production_Meter:
 
     def get_Meter_Value(self):
         
+        #https://www.theecoexperts.co.uk/solar-panels/how-much-electricity
+
         #"irradiação normal direta no intervalo em watts por metro quadrado"
         dni = self.df.iloc[self.i]["Dni"]
         self.i += 1
 
         #"valores mais comuns para a performance de células fotovoltaicas"
-        r = 15
+        r = 0.15
 
         #"desprezável o fator de idade do painel, ou seja, não é considerada a deterioração do mesmo ao longo do tempo"
         p = 0.8
