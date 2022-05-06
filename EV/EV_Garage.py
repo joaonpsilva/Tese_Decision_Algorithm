@@ -64,6 +64,8 @@ class EV_Garage:
                 sigma = min([sigma,1])
                 departure_guess = round(random.gauss(departure_Time, sigma))
                 departure_guess = 1 if departure_guess < 1 else departure_guess
+                departure_guess = 4 if departure_guess > 4 else departure_guess
+
                 ev.departure_Time = current_Date + timedelta(hours=departure_guess)
 
                 ev.batterry_Threshold = round(np.random.triangular(0.1, 0.3, 0.8, size=None),2) #new battery threshold
