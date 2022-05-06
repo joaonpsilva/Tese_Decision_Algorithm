@@ -152,7 +152,7 @@ class Decision_Alg:
         if context["grid"].kwh_price <= 0.005:
             grid_P = 1
         elif context["stationary_Battery"].kwh_price > context["grid"].kwh_price or context["grid"].kwh_price <= 0.5 * context["grid"].average_kwh_price:
-            grid_P = 2
+            grid_P = 1.5
         else:
             grid_P = 3
         self.give_Priority.append(Priority_Object("Grid", grid_P, 99999999))
