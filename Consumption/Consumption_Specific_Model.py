@@ -2,7 +2,7 @@ from Consumption.Consumption_Model import ML_Model
 from sklearn.preprocessing import StandardScaler
 from keras.preprocessing.sequence import TimeseriesGenerator
 from sklearn.svm import SVR
-
+import numpy as np
 
 class Consumption_Specific_Model(ML_Model):
     
@@ -25,7 +25,7 @@ class Consumption_Specific_Model(ML_Model):
         x_train = [arr[0].flatten() for arr in train_generator]
         y_train = [arr[1].flatten() for arr in train_generator]
 
-        self.model.fit(x_train, y_train)
+        self.model.fit(x_train, np.array(y_train).ravel())
 
 
     def predict_next(self, df):
