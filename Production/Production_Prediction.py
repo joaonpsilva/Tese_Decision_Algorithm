@@ -5,11 +5,11 @@ def removeSecs(a):
 
 class Production_Meter:
 
-    def __init__(self, startDate, solar_Panel_Area=1):
+    def __init__(self, startDate, solar_Panel_Area=1, file="Portugal"):
         
         self._solar_Panel_Area = solar_Panel_Area
 
-        self.df = pd.read_csv("Production/Portugal_Solar.csv", delimiter = ',')
+        self.df = pd.read_csv("Production/" + file + "_Solar.csv", delimiter = ',')
 
         self.df['PeriodStart'] = self.df.apply(lambda row : removeSecs(row['PeriodStart']), axis = 1)
         self.df['PeriodEnd'] = self.df.apply(lambda row : removeSecs(row['PeriodEnd']), axis = 1)

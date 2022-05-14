@@ -12,7 +12,7 @@ import argparse
 from prettytable import PrettyTable
 
 
-def execute(alg, ev_number, t, p, grid):
+def execute(alg, ev_number, t, p, grid, prod_file):
     consumption_Meter = Consumption_Meter(test_number = t)
     current_Date = consumption_Meter.get_Start_Date()
 
@@ -26,7 +26,7 @@ def execute(alg, ev_number, t, p, grid):
         consumption_Prediction = Consumption_BaseLine(targetName)
 
     #PRODUCTION
-    production_meter = Production_Meter(current_Date, solar_Panel_Area=p)
+    production_meter = Production_Meter(current_Date, solar_Panel_Area=p, file=prod_file)
 
     #EVS
     ev_Garage = EV_Garage(ev_number)
@@ -147,7 +147,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-ev", type=int, default = 3, help="number of Evs")
 parser.add_argument("-alg", type=str, default="smart", choices=["smart", "dumb"], help="Decision algorithm")
 parser.add_argument("-t", type=int, default = 0, help="Test File")
-parser.add_argument("-p", type=int, default = 9, help="Panel Area")
+parser.add_argument("-panel", type=int, default = 9, help="Panel Area")
+parser.add_argument("-pf", type=str, default="Portugal", choices=["Portugal", "London"], help="Production file")
 parser.add_argument("-grid", type=str, default="flat", choices=["flat", "dynamic"], help="Grid Price")
 
 args = parser.parse_args()
@@ -155,7 +156,7 @@ args = parser.parse_args()
 t = PrettyTable(['Run', 'Total Cost', 'Bill Cost', 'Battery Cost', 'Impaired', 'House Consumption', 'Production'])
 total_bill_cost, total_battery_cost, total_impaired, total_house_consumption, total_production = 0,0,0,0,0
 
-simulation = execute(args.alg, args.ev, args.t, args.p, args.grid)
+simulation = execute(args.alg, args.ev, args.t, args.panel, args.grid, args.pf)
 
 i=0 
 for month_results in simulation:
