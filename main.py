@@ -1,5 +1,6 @@
 from Consumption.Consumption_Prediction import Consumption_Prediction
 from Consumption.Consumption_Meter import Consumption_Meter
+from Consumption.Consumption_BaseLine import Consumption_BaseLine
 from EV.EV_Garage import EV_Garage
 from Production.Production_Prediction import Production_Meter
 from datetime import datetime, timedelta
@@ -11,7 +12,7 @@ import argparse
 from prettytable import PrettyTable
 
 
-def execute(alg, ev_number, t, p):
+def execute(alg, ev_number, t, p, grid):
     consumption_Meter = Consumption_Meter(test_number = t)
     current_Date = consumption_Meter.get_Start_Date()
 
@@ -19,7 +20,10 @@ def execute(alg, ev_number, t, p):
     featuresNames = ['use', 'hour', 'weekday']
     targetName = ['use']
     past_window = 24
-    consumption_Prediction = Consumption_Prediction(past_window, featuresNames, targetName)
+    if alg == "smart":
+        consumption_Prediction = Consumption_Prediction(past_window, featuresNames, targetName)
+    elif alg == "dumb":
+        consumption_Prediction = Consumption_BaseLine(targetName)
 
     #PRODUCTION
     production_meter = Production_Meter(current_Date, solar_Panel_Area=p)
@@ -31,7 +35,10 @@ def execute(alg, ev_number, t, p):
     stationary_battery = Battery(battery_size = 50)
 
     #GRID
-    grid = Grid_sinusoidal()
+    if grid == "flat":
+        grid = Grid_Linear()
+    elif grid == "dynamic":
+        grid = Grid_sinusoidal()
 
     #Decision
     if alg == "smart":
@@ -39,8 +46,12 @@ def execute(alg, ev_number, t, p):
     elif alg == "dumb":
         decision_algorithm = Decision_Alg_Dumber()
 
-    total_cost = 0
+    bill_cost = 0
+    battery_cost = 0
     i = 0
+    monthCounter = 0
+    total_house_consumption = 0
+    total_production = 0
 
     while True:
 
@@ -56,6 +67,8 @@ def execute(alg, ev_number, t, p):
         if consumption_Prediction_Value is None:
             continue
         
+        i += 1
+
         #REAL VALUE
         consumption_Next_Value = consumption_Meter.get_Meter_Value()
         consumption_Meter.revert_Step()
@@ -69,14 +82,12 @@ def execute(alg, ev_number, t, p):
         #Grid
         grid.update(current_Date)
 
-        #print("\n------------------Date: ", current_Date, "----------------------------------------")
-        #print("Consumption Prediction: ", consumption_Prediction_Value)
-        #print("Consumption Real value: ", consumption_Next_Value["use"])
-        #print("Production Value: ", production_Current_Value)
-        #print("Connected Vehicles ", ev_Garage.get_Current_Vehicles())
-        #print("Stationary Battery ", stationary_battery)
+
+        total_house_consumption += consumption_Current_Value["use"]
+        total_production += production_Current_Value
 
 
+        #CALL DECISION ALG
         context = {
                 "consumption_prediction": consumption_Prediction_Value,
                 "production": production_Current_Value,
@@ -89,29 +100,45 @@ def execute(alg, ev_number, t, p):
 
 
         decisions = decision_algorithm.analyse(context)
-
         for decision in decisions:
-            #print("\n-----------DECISIONS-----------\n")
-            #print(decision)
 
-            if decision.obj == "Grid" and decision.mode == "discharge":
-                total_cost += grid.kwh_price * decision.energy_amount
+            if decision.obj == "Grid" and decision.mode == "discharge": #got energy from grid
+                bill_cost += grid.kwh_price * decision.energy_amount
 
-            if isinstance(decision.obj, str):
+            if isinstance(decision.obj, str):   #is not battery or ev
                 continue
             
+            #charged battery or ev
+            if decision.mode == "charge":
+                try:
+                    batt = decision.obj.battery    
+                except :
+                    batt = decision.obj
+                battery_cost += batt.kwh_price * decision.energy_amount
+
+                
+            #charge or discharge action    
             decision.obj.charge(decision.energy_amount) if decision.mode == "charge" else decision.obj.discharge(decision.energy_amount)
 
 
         current_Date = current_Date + timedelta(hours=1)
-        i += 1
+
+        #Report month results
         if i == 30*24:
-            break
 
-    print("TOTAL COST: ", total_cost)
-    print("EMPAIRED EVS: ", ev_Garage.empaired_evs)
+            yield bill_cost, battery_cost, ev_Garage.empaired_evs, total_house_consumption, total_production
+            i = 0
+            ev_Garage.empaired_evs = 0
+            bill_cost = 0
+            battery_cost = 0
+            total_production = 0
+            total_house_consumption = 0
+            monthCounter += 1
 
-    return total_cost, ev_Garage.empaired_evs
+            if monthCounter == 12:
+                return
+
+
 
 
 parser = argparse.ArgumentParser()
@@ -119,60 +146,29 @@ parser.add_argument("-ev", type=int, default = 3, help="number of Evs")
 parser.add_argument("-alg", type=str, default="smart", choices=["smart", "dumb"], help="Decision algorithm")
 parser.add_argument("-t", type=int, default = 0, help="Test File")
 parser.add_argument("-p", type=int, default = 9, help="Panel Area")
+parser.add_argument("-grid", type=str, default="flat", choices=["flat", "dynamic"], help="Grid Price")
+
 args = parser.parse_args()
 
-t = PrettyTable(['Run', 'Cost', 'Impaired'])
+t = PrettyTable(['Run', 'Total Cost', 'Bill Cost', 'Battery Cost', 'Impaired', 'House Consumption', 'Production'])
+total_bill_cost, total_battery_cost, total_impaired, total_house_consumption, total_production = 0,0,0,0,0
 
-total_cost, total_impaired = 0,0
-for i in range(10):
-    cost, impaired = execute(args.alg, args.ev, args.t, args.p)
+simulation = execute(args.alg, args.ev, args.t, args.p, args.grid)
 
-    t.add_row([i, cost, impaired])
+i=0 
+for month_results in simulation:
+    i+=1
+    bill_cost, battery_cost, impaired, house_consumption, production = month_results
 
-    total_cost += cost
+    t.add_row([i, bill_cost+battery_cost, bill_cost,battery_cost, impaired, house_consumption, production])
+
+    total_bill_cost += bill_cost
+    total_battery_cost += battery_cost
     total_impaired += impaired
+    total_house_consumption += house_consumption
+    total_production += production
 
-t.add_row(["mean", total_cost / 10, total_impaired / 10])
+t.add_row(["mean", total_bill_cost/i + total_battery_cost/i, \
+        total_bill_cost / i, total_battery_cost/i, total_impaired / i,\
+            total_house_consumption/i, total_production/i])
 print(t)
-
-#python3 main.py -ev 3 -t 0 -alg dumb
-
-
-# +------+--------------------+----------+
-# | Run  |        Cost        | Impaired |
-# +------+--------------------+----------+
-# |  0   | 211.94826880818647 |    0     |
-# |  1   | 212.0704086056312  |    0     |
-# |  2   | 260.07905808317105 |    0     |
-# |  3   | 257.86480352587324 |    1     |
-# |  4   | 253.85036663410173 |    0     |
-# |  5   | 230.39519466474874 |    0     |
-# |  6   | 259.3303719645566  |    0     |
-# |  7   | 209.94104390608166 |    0     |
-# |  8   | 240.74757311583528 |    1     |
-# |  9   | 255.64928474276547 |    0     |
-# | mean | 239.18763740509513 |   0.2    |
-# +------+--------------------+----------+
-
-# +------+--------------------+----------+
-# | Run  |        Cost        | Impaired |
-# +------+--------------------+----------+
-# |  0   | 163.48339964989773 |    1     |
-# |  1   | 158.50410416081803 |    3     |
-# |  2   | 195.86075019261614 |    0     |
-# |  3   | 148.6611736637193  |    1     |
-# |  4   | 210.16801703296295 |    4     |
-# |  5   | 149.84577587043705 |    2     |
-# |  6   | 160.76798317976107 |    7     |
-# |  7   | 182.35786711976485 |    2     |
-# |  8   | 174.6018105760738  |    3     |
-# |  9   | 189.1019852140284  |    3     |
-# | mean | 173.33528666600796 |   2.6    |
-# +------+--------------------+----------+
-#27.5 %
-
-
-
-
-
-    
