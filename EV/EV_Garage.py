@@ -56,15 +56,14 @@ class EV_Garage:
                 self.away_Evs.remove(ev)
 
                 charged_soc = round(np.random.triangular(0, 0.2, 0.8, size=None),2) #ev might have charged
-                ev.battery.soc = ev.battery.soc - ev.batterry_Threshold + charged_soc #previous soc - soc needed for previous trip + charged
+                ev.battery.soc = ev.battery.soc - (ev.batterry_Threshold * random.uniform(0.8, 0.99)) + charged_soc #previous soc - soc needed for previous trip + charged
 
 
                 departure_Time = round(np.random.triangular(1, 3, 24, size=None))   #new departure time
                 sigma = departure_Time/4 #quanto mais pequeno departure mais certeza
-                sigma = min([sigma,1])
+                sigma = min([sigma,1.5])
                 departure_guess = round(random.gauss(departure_Time, sigma))
                 departure_guess = 1 if departure_guess < 1 else departure_guess
-                departure_guess = 4 if departure_guess > 4 else departure_guess
 
                 ev.departure_Time = current_Date + timedelta(hours=departure_guess)
 
