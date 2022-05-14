@@ -53,7 +53,9 @@ def execute(alg, ev_number, t, p, grid):
     total_house_consumption = 0
     total_production = 0
 
+    simul_start = 0
     while True:
+        simul_start += 1
 
         #CONSUMPTION PREDICTION
         consumption_Current_Value = consumption_Meter.get_Meter_Value()
@@ -64,7 +66,7 @@ def execute(alg, ev_number, t, p, grid):
         except:
             pass
 
-        if consumption_Prediction_Value is None:
+        if simul_start <= 24:
             continue
         
         i += 1
