@@ -1,6 +1,7 @@
 from datetime import timedelta
 from Decision.Decision import Decision
 from Decision.Priority_Object import Priority_Object
+from Battery import Battery
 
 class Decision_Alg:
     
@@ -32,19 +33,13 @@ class Decision_Alg:
 
         decisions = self.make_Decisions()
 
-        #Give back energy wasnt used SIMULATION CORRECTION
-        if context["consumption_prediction"] is not None and simulation_Error < 0:  #consumption was smaller than expected
-            decision = next((d for d in decisions if d.mode == "discharge" and not isinstance(d.obj, str)), None)
-            if decision is not None:
-                decision.energy_amount += simulation_Error
-
         return decisions
 
     
     def receive_EVS(self, context):
         #EVS
-        context["connected_Evs"].sort(key=lambda x: x.departure_Time)
-        for ev in context["connected_Evs"]:
+        context["connected_EVs"].sort(key=lambda x: x.departure_Time)
+        for ev in context["connected_EVs"]:
             charge_needed = ev.batterry_ThresholdKWH - ev.battery.current_Capacity
             free_battery_space = ev.battery.battery_size - ev.battery.current_Capacity
             max_can_charge = ev.battery.charge_Rate
@@ -61,6 +56,7 @@ class Decision_Alg:
                 max_can_charge -= e
                 free_battery_space -= e
 
+                e = e / ev.battery.loss
                 if time_diff - time2charge <= timedelta(hours=5):   #Account for error
                     self.receive_Priority.append(Priority_Object(ev, 3, e))
                 else:
@@ -68,7 +64,8 @@ class Decision_Alg:
             
             #EV may appear twice in list with different priorities
             if max_can_charge > 0 and free_battery_space > 0:
-                e = min([max_can_charge, free_battery_space] )   #pick the minimum         
+                e = min([max_can_charge, free_battery_space] )   #pick the minimum
+                e = e / ev.battery.loss        
                 self.receive_Priority.append(Priority_Object(ev, 1, e))
         
     
@@ -100,15 +97,17 @@ class Decision_Alg:
             if e_should_receive > 0:    #this energy has more priority
 
                 e = min([max_can_charge, free_battery_space, e_should_receive ] )
-                #1.5 priority -> evs leaving soon
-                self.receive_Priority.append(Priority_Object(battery, 1.5, e))
-
                 max_can_charge -= e
                 e_should_receive -= e
                 free_battery_space -= e
+
+                e = e / battery.loss
+                #1.5 priority -> evs leaving soon
+                self.receive_Priority.append(Priority_Object(battery, 1.5, e))
             
             if max_can_charge > 0 and free_battery_space > 0:   #if can still charge more
                 e = min([max_can_charge, free_battery_space] )
+                e = e / battery.loss
                 self.receive_Priority.append(Priority_Object(battery, 1, e))
 
 
@@ -138,6 +137,7 @@ class Decision_Alg:
             time_diff = ev.departure_Time - context["current_Time"]
             
             e = min([ev.battery.charge_Rate, charge_dispendable] )
+            e = e / ev.battery.loss
             
             if time_diff <= timedelta(hours=4):     
                 self.give_Priority.append(Priority_Object(ev, 1.5, e))
@@ -169,14 +169,15 @@ class Decision_Alg:
             if energy_should_give > 0:  #give energy with more priority to make room
 
                 e = min([max_can_discharge, capacity, energy_should_give] )
-                self.give_Priority.append(Priority_Object(battery, 1, e))
-
                 max_can_discharge -= e
                 energy_should_give -= e
                 capacity -= e
+                e = e / battery.loss
+                self.give_Priority.append(Priority_Object(battery, 1, e))
             
             if capacity > 0 and max_can_discharge > 0:
                 e = min([max_can_discharge, capacity] )
+                e = e / battery.loss
                 self.give_Priority.append(Priority_Object(battery, 2, e))
 
 
@@ -220,6 +221,12 @@ class Decision_Alg:
             self.give_Priority = [obj for obj in self.give_Priority if obj.amount_kw > 0]
 
             for obj_give in self.give_Priority: #Find who will give energy
+
+                if obj_receive.object == obj_give.object:
+                    continue
+
+                if isinstance(obj_receive.object, Battery) and isinstance(obj_give.object, Battery):
+                    continue
 
                 if obj_give.priority <= obj_receive.priority:
 

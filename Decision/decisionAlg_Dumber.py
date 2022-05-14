@@ -4,8 +4,6 @@ from Decision.Priority_Object import Priority_Object
 
 class Decision_Alg_Dumber:
     
-    def __init__(self):
-        pass
     
     def analyse(self, context):
 
@@ -15,6 +13,10 @@ class Decision_Alg_Dumber:
         self.define_receive_Priority(context)
         self.define_give_Priority(context)
 
+        simulation_Error = context["Real_consumption"] - context["consumption_prediction"]
+        if simulation_Error > 0:
+            self.receive_Priority.append(Priority_Object("Consumption", 3, simulation_Error))
+
         decisions = self.make_Decisions()
 
         return decisions
@@ -23,18 +25,20 @@ class Decision_Alg_Dumber:
     def define_receive_Priority(self, context):
 
         #ENERGY CONSUMPTION    
-        self.receive_Priority.append(Priority_Object("Consumption", 3, context["Real_consumption"]))
+        self.receive_Priority.append(Priority_Object("Consumption", 3, context["consumption_prediction"]))
 
         #EVS
         for ev in context["connected_EVs"]:
             free_battery_space = ev.battery.battery_size - ev.battery.current_Capacity
             e = min([free_battery_space, ev.battery.charge_Rate])
+            e = e / ev.battery.loss
             self.receive_Priority.append(Priority_Object(ev, 3, e))
  
         #STATIONARY BATTERY
         for battery in context["stationary_Batteries"]:
             free_battery_space = battery.battery_size - battery.current_Capacity
             e = min([battery.charge_Rate,free_battery_space] )
+            e = e / battery.loss
             self.receive_Priority.append(Priority_Object(battery, 1, e))
         
         self.receive_Priority.append(Priority_Object("Grid", 0, 99999999))
@@ -50,6 +54,7 @@ class Decision_Alg_Dumber:
         #STATIONARY BATTERY
         for battery in context["stationary_Batteries"]:
             e = min([battery.charge_Rate, battery.current_Capacity] )
+            e = e / battery.loss
             self.give_Priority.append(Priority_Object(battery, 2, e))
 
         #GRID
