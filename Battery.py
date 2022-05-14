@@ -10,6 +10,8 @@ class Battery:
         self.battery_price = battery_price
         self.cycles = cycles
 
+        self._loss = 0.98
+
         self.calc_costToCharge()
 
     
@@ -21,10 +23,14 @@ class Battery:
         return "Stationary_Battery_{current_Capacity}KWh".format(current_Capacity=self.current_Capacity)
     
     def charge(self, amount):
-        self.current_Capacity += amount 
+        self.current_Capacity += amount  * self.loss
     
     def discharge(self, amount):
-        self.current_Capacity -= amount 
+        self.current_Capacity -= amount * self.loss
+
+    @property
+    def loss(self):
+        return self._loss
 
     @property
     def kwh_price(self):
