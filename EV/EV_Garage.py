@@ -25,9 +25,8 @@ class EV_Garage:
             if ev_info["dep_Time"] == 0:
                 #print("EV LEAVING: " + str(ev_info)) 
                 if ev_info["ev"].battery.soc < ev_info["ev"].batterry_Threshold:
-                    #print(ev_info["ev"])
-                    #exit(0)
                     self.empaired_evs += 1
+                    print("EMPAIRED", ev_info)
 
                 self.away_Evs.append(ev_info["ev"])
 
@@ -67,7 +66,10 @@ class EV_Garage:
 
                 ev.departure_Time = current_Date + timedelta(hours=departure_guess)
 
-                ev.batterry_Threshold = round(np.random.triangular(0.1, 0.3, 0.8, size=None),2) #new battery threshold
+                max_T = min([5/24 * departure_Time + ev.battery.soc, 0.8])
+                mid = 0.15 if max_T <= 0.3 else 0.3
+                    
+                ev.batterry_Threshold = round(np.random.triangular(0.1, mid, max_T, size=None),2) #new battery threshold
                                 
                 ev_info = {"dep_Time":departure_Time, "ev": ev}
                 self.parked_Evs.append(ev_info)
