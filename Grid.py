@@ -25,8 +25,8 @@ class Grid_sinusoidal:
 
     @property
     def kwh_price(self):
-        return 0.2 * (math.cos( (self.hour/4) - 11) + 1) + 0.1
+        return 0.15 * (math.cos( (self.hour/4) - 10.5) + 1) + 0.1
     
     @property
     def average_kwh_price(self):
-        return 0.3
+        return 0.25
