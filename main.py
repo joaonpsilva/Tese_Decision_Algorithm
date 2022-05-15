@@ -54,13 +54,15 @@ def execute(alg, ev_number, t, p, grid, prod_file):
     total_production = 0
 
     simul_start = 0
+    f = open("cheat0.txt", "r")
+
     while True:
         simul_start += 1
 
         #CONSUMPTION PREDICTION
         consumption_Current_Value = consumption_Meter.get_Meter_Value()
-        consumption_Prediction.new_Record(consumption_Current_Value)
-        consumption_Prediction_Value = consumption_Prediction.get_Prediction()
+        #consumption_Prediction.new_Record(consumption_Current_Value)
+        #consumption_Prediction_Value = consumption_Prediction.get_Prediction()
         try:
             consumption_Prediction_Value = consumption_Prediction_Value[0]
         except:
@@ -68,8 +70,11 @@ def execute(alg, ev_number, t, p, grid, prod_file):
 
         if simul_start <= 24:
             continue
+
+        consumption_Prediction_Value = float(f.readline())
         
         i += 1
+
 
         #REAL VALUE
         consumption_Next_Value = consumption_Meter.get_Meter_Value()
@@ -138,6 +143,7 @@ def execute(alg, ev_number, t, p, grid, prod_file):
             monthCounter += 1
 
             if monthCounter == 12:
+                f.close()
                 return
 
 
