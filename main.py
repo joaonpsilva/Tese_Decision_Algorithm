@@ -1,6 +1,7 @@
 from Consumption.Consumption_Prediction import Consumption_Prediction
 from Consumption.Consumption_Meter import Consumption_Meter
 from Consumption.Consumption_BaseLine import Consumption_BaseLine
+from Consumption.Consumption_cheat import Consumption_Cheat
 from EV.EV_Garage import EV_Garage
 from Production.Production_Prediction import Production_Meter
 from datetime import datetime, timedelta
@@ -8,42 +9,63 @@ from Battery import Battery
 from Decision.decisionAlg import Decision_Alg
 from Decision.decisionAlg_Dumber import Decision_Alg_Dumber
 from Grid import Grid_Linear, Grid_sinusoidal
+from Co2_Meter import Co2_Meter
 import argparse
 from prettytable import PrettyTable
 
+parser = argparse.ArgumentParser()
+parser.add_argument("-ev", type=int, default = 3, help="number of Evs")
+parser.add_argument("-batt", type=int, default = 1, help="number of Stationary Batteries")
+parser.add_argument("-alg", type=str, default="smart", choices=["smart", "base"], help="Decision algorithm")
+parser.add_argument("-house", type=int, default = 0, help="Test File")
+parser.add_argument("-pA", type=int, default = 9, help="Panel Area")
+parser.add_argument("-pF", type=str, default="Portugal", choices=["Portugal", "London"], help="Production file")
+parser.add_argument("-grid", type=str, default="flat", choices=["flat", "dynamic"], help="Grid Price")
+parser.add_argument('--cheat', action='store_true')
+args = parser.parse_args()
 
-def execute(alg, ev_number, t, p, grid, prod_file):
-    consumption_Meter = Consumption_Meter(test_number = t)
+
+
+def execute():
+
+    co2 =  Co2_Meter()
+
+    consumption_Meter = Consumption_Meter(test_number = args.house)
     current_Date = consumption_Meter.get_Start_Date()
 
     #CONSUMPTION PREDICTION MODULE
     featuresNames = ['use', 'hour', 'weekday']
     targetName = ['use']
     past_window = 24
-    if alg == "smart":
-        consumption_Prediction = Consumption_Prediction(past_window, featuresNames, targetName)
-    elif alg == "dumb":
+    if args.alg == "smart":
+        if args.cheat:
+            consumption_Prediction = Consumption_Cheat(past_window, args.house)
+        else:
+            consumption_Prediction = Consumption_Prediction(past_window, featuresNames, targetName)
+    elif args.alg == "base":
         consumption_Prediction = Consumption_BaseLine(targetName)
 
     #PRODUCTION
-    production_meter = Production_Meter(current_Date, solar_Panel_Area=p, file=prod_file)
+    production_meter = Production_Meter(current_Date, solar_Panel_Area=args.pA, file=args.pF)
 
     #EVS
-    ev_Garage = EV_Garage(ev_number)
+    ev_Garage = EV_Garage(args.ev)
 
     #BATTERY
-    stationary_battery = Battery(battery_size = 50)
+    stationary_batteries = []
+    for i in range(args.batt):
+        stationary_batteries.append(Battery())
 
     #GRID
-    if grid == "flat":
+    if args.grid == "flat":
         grid = Grid_Linear()
-    elif grid == "dynamic":
+    elif args.grid == "dynamic":
         grid = Grid_sinusoidal()
 
     #Decision
-    if alg == "smart":
+    if args.alg == "smart":
         decision_algorithm = Decision_Alg()
-    elif alg == "dumb":
+    elif args.alg == "base":
         decision_algorithm = Decision_Alg_Dumber()
 
     bill_cost = 0
@@ -54,15 +76,15 @@ def execute(alg, ev_number, t, p, grid, prod_file):
     total_production = 0
 
     simul_start = 0
-    f = open("cheat0.txt", "r")
 
     while True:
         simul_start += 1
 
         #CONSUMPTION PREDICTION
         consumption_Current_Value = consumption_Meter.get_Meter_Value()
-        #consumption_Prediction.new_Record(consumption_Current_Value)
-        #consumption_Prediction_Value = consumption_Prediction.get_Prediction()
+        consumption_Prediction.new_Record(consumption_Current_Value)
+        consumption_Prediction_Value = consumption_Prediction.get_Prediction()
+
         try:
             consumption_Prediction_Value = consumption_Prediction_Value[0]
         except:
@@ -70,11 +92,8 @@ def execute(alg, ev_number, t, p, grid, prod_file):
 
         if simul_start <= 24:
             continue
-
-        consumption_Prediction_Value = float(f.readline())
-        
+                
         i += 1
-
 
         #REAL VALUE
         consumption_Next_Value = consumption_Meter.get_Meter_Value()
@@ -100,13 +119,15 @@ def execute(alg, ev_number, t, p, grid, prod_file):
                 "production": production_Current_Value,
                 "connected_EVs":ev_Garage.get_Current_Vehicles(),
                 "current_Time":current_Date,
-                "stationary_Batteries": [stationary_battery],
+                "stationary_Batteries": stationary_batteries,
                 "grid": grid,
                 "Real_consumption": consumption_Next_Value["use"]
             }
 
 
         decisions = decision_algorithm.analyse(context)
+        co2.update(decisions)
+
         for decision in decisions:
 
             if decision.obj == "Grid" and decision.mode == "discharge": #got energy from grid
@@ -129,55 +150,58 @@ def execute(alg, ev_number, t, p, grid, prod_file):
 
 
         current_Date = current_Date + timedelta(hours=1)
-
         #Report month results
         if i == 30*24:
+            emited_co2 = co2.amount_co2(stationary_batteries, ev_Garage)
+            yield bill_cost, battery_cost, ev_Garage.empaired_evs, total_house_consumption, total_production, emited_co2 
 
-            yield bill_cost, battery_cost, ev_Garage.empaired_evs, total_house_consumption, total_production
             i = 0
             ev_Garage.empaired_evs = 0
             bill_cost = 0
             battery_cost = 0
             total_production = 0
             total_house_consumption = 0
+            co2.reset()
             monthCounter += 1
 
             if monthCounter == 12:
-                f.close()
                 return
 
 
 
+t = PrettyTable(['Run', 'Total Cost', 'Bill Cost', 'Battery Cost', 'Impaired', "CO2",'House Consumption', 'Production'])
+total_bill_cost, total_battery_cost, total_impaired, total_house_consumption, total_production, total_co2 = 0,0,0,0,0,0
 
-parser = argparse.ArgumentParser()
-parser.add_argument("-ev", type=int, default = 3, help="number of Evs")
-parser.add_argument("-alg", type=str, default="smart", choices=["smart", "dumb"], help="Decision algorithm")
-parser.add_argument("-t", type=int, default = 0, help="Test File")
-parser.add_argument("-panel", type=int, default = 9, help="Panel Area")
-parser.add_argument("-pf", type=str, default="Portugal", choices=["Portugal", "London"], help="Production file")
-parser.add_argument("-grid", type=str, default="flat", choices=["flat", "dynamic"], help="Grid Price")
+simulation = execute()
 
-args = parser.parse_args()
-
-t = PrettyTable(['Run', 'Total Cost', 'Bill Cost', 'Battery Cost', 'Impaired', 'House Consumption', 'Production'])
-total_bill_cost, total_battery_cost, total_impaired, total_house_consumption, total_production = 0,0,0,0,0
-
-simulation = execute(args.alg, args.ev, args.t, args.panel, args.grid, args.pf)
-
-i=0 
+month=0
 for month_results in simulation:
-    i+=1
-    bill_cost, battery_cost, impaired, house_consumption, production = month_results
+    month+=1
 
-    t.add_row([i, bill_cost+battery_cost, bill_cost,battery_cost, impaired, house_consumption, production])
+    bill_cost, battery_cost, impaired, house_consumption, production, co2 = month_results
+
+
+    t.add_row([month, round(bill_cost + battery_cost,2), \
+                    round(bill_cost ,2), \
+                    round(battery_cost,2), \
+                    impaired, \
+                    round(co2,2), \
+                    round(house_consumption,2), \
+                    round(production,2)])
 
     total_bill_cost += bill_cost
     total_battery_cost += battery_cost
     total_impaired += impaired
     total_house_consumption += house_consumption
     total_production += production
+    total_co2 += co2
 
-t.add_row(["mean", total_bill_cost/i + total_battery_cost/i, \
-        total_bill_cost / i, total_battery_cost/i, total_impaired / i,\
-            total_house_consumption/i, total_production/i])
+t.add_row(["Total", round(total_bill_cost + total_battery_cost,2), \
+                    round(total_bill_cost ,2), \
+                    round(total_battery_cost,2), \
+                    total_impaired, \
+                    round(total_co2,2), \
+                    round(total_house_consumption,2), \
+                    round(total_production,2)])
+
 print(t)
