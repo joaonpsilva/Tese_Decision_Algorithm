@@ -13,11 +13,15 @@ class Decision_Alg_Dumber:
         self.define_receive_Priority(context)
         self.define_give_Priority(context)
 
-        simulation_Error = context["Real_consumption"] - context["consumption_prediction"]
-        if simulation_Error > 0:
-            self.receive_Priority.append(Priority_Object("Consumption", 3, simulation_Error))
-
         decisions = self.make_Decisions()
+
+        simulation_Error = context["Real_consumption"] - context["consumption_prediction"]
+            
+        if simulation_Error > 0:
+            self.receive_Priority = [Priority_Object("Consumption", 3, simulation_Error)]
+            self.give_Priority = [Priority_Object("Grid", 3, 999999)]
+            decisions += self.make_Decisions()
+
 
         return decisions
 
@@ -54,7 +58,7 @@ class Decision_Alg_Dumber:
         #STATIONARY BATTERY
         for battery in context["stationary_Batteries"]:
             e = min([battery.charge_Rate, battery.current_Capacity] )
-            e = e / battery.loss
+            e = e * battery.loss
             self.give_Priority.append(Priority_Object(battery, 2, e))
 
         #GRID
