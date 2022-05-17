@@ -26,7 +26,7 @@ class Battery:
         self.current_Capacity += amount  * self.loss
     
     def discharge(self, amount):
-        self.current_Capacity -= amount * self.loss
+        self.current_Capacity -= amount / self.loss
 
     @property
     def loss(self):
