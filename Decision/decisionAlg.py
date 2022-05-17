@@ -17,7 +17,7 @@ class Decision_Alg:
             expected_error = 2
             expected_remaining =  context["production"] - (context["consumption_prediction"] + expected_error)
             # SIMULATION CORRECTION
-            simulation_Error = context["Real_consumption"] - context["consumption_prediction"]
+            simulation_Error = context["Real_consumption"] - context["consumption_prediction"]/2
         else:
             expected_remaining = None
             simulation_Error = context["Real_consumption"]
@@ -26,13 +26,15 @@ class Decision_Alg:
         self.define_receive_Priority(context, expected_remaining)
         self.define_give_Priority(context, expected_remaining)
 
-
-        if context["consumption_prediction"] is None or simulation_Error > 0:    #consumption was actually bigger than expected
-            self.receive_Priority.append(Priority_Object("Consumption", 3, simulation_Error))
-
-
         decisions = self.make_Decisions()
 
+        if context["consumption_prediction"] is None or simulation_Error > 0:    #consumption was actually bigger than expected
+            self.receive_Priority = [Priority_Object("Consumption", 3, simulation_Error)]
+            self.give_Priority = [Priority_Object("Grid", 3, 999999)]
+            decisions += self.make_Decisions()
+
+
+        
         return decisions
 
     
@@ -65,7 +67,7 @@ class Decision_Alg:
             #EV may appear twice in list with different priorities
             if max_can_charge > 0 and free_battery_space > 0:
                 e = min([max_can_charge, free_battery_space] )   #pick the minimum
-                e = e / ev.battery.loss        
+                e = e / ev.battery.loss     
                 self.receive_Priority.append(Priority_Object(ev, 1, e))
         
     
@@ -116,7 +118,7 @@ class Decision_Alg:
 
         #ENERGY CONSUMPTION    
         if context["consumption_prediction"]:
-            self.receive_Priority.append(Priority_Object("Consumption", 3, context["consumption_prediction"]))
+            self.receive_Priority.append(Priority_Object("Consumption", 3, context["consumption_prediction"]/2))
 
         self.receive_EVS(context)
 
@@ -137,7 +139,7 @@ class Decision_Alg:
             time_diff = ev.departure_Time - context["current_Time"]
             
             e = min([ev.battery.charge_Rate, charge_dispendable] )
-            e = e / ev.battery.loss
+            e = e * ev.battery.loss
             
             if time_diff <= timedelta(hours=4):     
                 self.give_Priority.append(Priority_Object(ev, 1.5, e))
@@ -172,12 +174,12 @@ class Decision_Alg:
                 max_can_discharge -= e
                 energy_should_give -= e
                 capacity -= e
-                e = e / battery.loss
+                e = e * battery.loss
                 self.give_Priority.append(Priority_Object(battery, 1, e))
             
             if capacity > 0 and max_can_discharge > 0:
                 e = min([max_can_discharge, capacity] )
-                e = e / battery.loss
+                e = e * battery.loss
                 self.give_Priority.append(Priority_Object(battery, 2, e))
 
 
