@@ -24,6 +24,10 @@ class EV_Garage:
     def get_Current_Vehicles(self):
         return [ev["ev"] for ev in self.parked_Evs]
     
+    def get_All_Vehicles(self):
+        return [ev["ev"] for ev in self.parked_Evs] + self.away_Evs
+
+    
     def evs_leaving(self):
         #Evs leaving
         for ev_info in list(self.parked_Evs):
@@ -60,7 +64,8 @@ class EV_Garage:
 
                 #SOC
                 charged_soc = round(np.random.triangular(0, 0.2, 0.6, size=None),2) #ev might have charged
-                ev.battery.soc = ev.battery.soc - (ev.batterry_Threshold * random.uniform(0.5, 1)) + charged_soc #previous soc - soc needed for previous trip + charged
+                charged_soc = 0
+                ev.battery.soc = ev.battery.soc - (ev.batterry_Threshold * random.uniform(0.2, 0.8)) + charged_soc #previous soc - soc needed for previous trip + charged
 
                 #DEPARTURE TIME
                 choosen_hour = random.choice(self.leave_hours)
@@ -87,7 +92,7 @@ class EV_Garage:
 
 
                 #THRESHOLD
-                max_T = min([5/24 * time_left + ev.battery.soc, 0.8])
+                max_T = min([5/24 * (time_left-1 if time_left > 1 else time_left), 0.8])
                 mid = 0.15 if max_T <= 0.3 else 0.3
                     
                 ev.batterry_Threshold = round(np.random.triangular(0.1, mid, max_T, size=None),2) #new battery threshold
