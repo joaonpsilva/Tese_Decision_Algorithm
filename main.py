@@ -126,7 +126,7 @@ def execute():
 
 
         decisions = decision_algorithm.analyse(context)
-        co2.update(decisions)
+        co2.update(decisions, consumption_Next_Value["use"])
 
         for decision in decisions:
 
