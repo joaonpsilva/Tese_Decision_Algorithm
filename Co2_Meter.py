@@ -4,6 +4,7 @@ class Co2_Meter:
         self.total_grid_consumed_house = 0
         self.total_lost_in_out = 0
         self.total_lost_in_in = 0
+        self.total_lost_to_Grid = 0
         self.total_grid_in_battery = 0
         self.total_produced_in_battery = 0
 
@@ -25,16 +26,19 @@ class Co2_Meter:
         self.prev_kWs_batteries = curr_kWs_batteries
 
 
-        totalenergybatteries = self.total_produced_in_battery + self.total_grid_in_battery
-        percentage_gridEnergy_in_battery = totalenergybatteries / self.total_grid_in_battery
-        lost_in_out_dirty = percentage_gridEnergy_in_battery * (self.total_lost_in_in + self.total_lost_in_out) 
+        totalenergy_batteries = self.total_produced_in_battery + self.total_grid_in_battery
         
-        total_dirty_energy_consumed = self.total_grid_consumed_house + (self.total_grid_in_battery - amortize_batteries - lost_in_out_dirty)
+        percentage_gridEnergy_in_battery = self.total_grid_in_battery / totalenergy_batteries \
+                                                if totalenergy_batteries > 0 else 0
+
+        lost_in_out_dirty = percentage_gridEnergy_in_battery * (self.total_lost_in_in + self.total_lost_in_out)
+        
+        total_dirty_energy_consumed = self.total_grid_consumed_house + (self.total_grid_in_battery - amortize_batteries - lost_in_out_dirty - self.total_lost_to_Grid)
         return total_dirty_energy_consumed * 0.233
         #https://bulb.co.uk/carbon-tracker/
 
     
-    def update(self, decisions):
+    def update(self, decisions, real_house_consumption):
         
         for charge in range(0, len(decisions), 2):
             discharge = charge + 1
@@ -43,7 +47,8 @@ class Co2_Meter:
                 #total_grid_bought += decisions[discharge].energy_amount
 
                 if decisions[charge].obj == "Consumption":
-                    self.total_grid_consumed_house += decisions[charge].energy_amount
+                    consumed = min([decisions[charge].energy_amount,real_house_consumption])
+                    self.total_grid_consumed_house += consumed
                 else:
                     self.total_lost_in_in += decisions[charge].energy_amount * 0.02
                     self.total_grid_in_battery += decisions[discharge].energy_amount * 0.98
@@ -66,3 +71,8 @@ class Co2_Meter:
 
                 if decisions[charge].obj != "Consumption":
                     self.total_lost_in_in += decisions[charge].energy_amount * 0.02
+                else:
+                    consumed = min([decisions[charge].energy_amount,real_house_consumption])
+                    self.total_lost_to_Grid += decisions[charge].energy_amount - consumed
+
+                    
