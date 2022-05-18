@@ -1,4 +1,7 @@
 from datetime import timedelta
+from tokenize import triple_quoted
+
+from pygments import highlight
 from Decision.Decision import Decision
 from Decision.Priority_Object import Priority_Object
 from Battery import Battery
@@ -16,17 +19,17 @@ class Decision_Alg:
         if context["consumption_prediction"]:
             expected_error = 2
             expected_remaining =  context["production"] - (context["consumption_prediction"] + expected_error)
-            # SIMULATION CORRECTION
-            simulation_Error = context["Real_consumption"] - context["consumption_prediction"]/2
         else:
             expected_remaining = None
-            simulation_Error = context["Real_consumption"]
 
 
         self.define_receive_Priority(context, expected_remaining)
         self.define_give_Priority(context, expected_remaining)
-
         decisions = self.make_Decisions()
+
+        house_cons = [d.energy_amount for d in decisions if d.obj == "Consumption"]
+        house_cons = house_cons[0] if len(house_cons) > 0 else 0
+        simulation_Error = context["Real_consumption"] - house_cons
 
         if context["consumption_prediction"] is None or simulation_Error > 0:    #consumption was actually bigger than expected
             self.receive_Priority = [Priority_Object("Consumption", 3, simulation_Error)]
@@ -36,6 +39,46 @@ class Decision_Alg:
 
         
         return decisions
+    
+    def receive_consumption(self, context):
+
+        free_storage = sum([ev.battery.battery_size - ev.battery.current_Capacity \
+            for ev in context["connected_EVs"] ]) + \
+                sum([battery.battery_size - battery.current_Capacity \
+                    for battery in context["stationary_Batteries"]])
+
+
+        ev_energy_need = sum([ev.batterry_ThresholdKWH - ev.battery.current_Capacity \
+            for ev in context["connected_EVs"] \
+                if ev.batterry_ThresholdKWH > ev.battery.current_Capacity])
+        
+
+        ev_energy_give = sum([ev.battery.current_Capacity - ev.batterry_ThresholdKWH \
+            for ev in context["connected_EVs"] \
+                if ev.batterry_ThresholdKWH < ev.battery.current_Capacity])
+
+        batery_give = sum([battery.current_Capacity for battery in context["stationary_Batteries"]])
+
+        energy_give = ev_energy_give + batery_give + context["production"]
+        energy_need = ev_energy_need
+
+        energy_remaining = energy_give - energy_need
+        waste = max([context["production"] - free_storage, 0])
+        times_greater = energy_remaining / context["consumption_prediction"]
+
+        if energy_remaining < 0:
+            c = 0
+        elif times_greater >= 5:
+            c = max([context["consumption_prediction"], waste])
+        else:
+            if context["grid"].kwh_price > context["grid"].average_kwh_price:
+                c = max([context["consumption_prediction"], waste])
+            else:
+                c = waste
+        
+        self.receive_Priority.append(Priority_Object("Consumption", 3, c))
+        
+
 
     
     def receive_EVS(self, context):
@@ -118,7 +161,7 @@ class Decision_Alg:
 
         #ENERGY CONSUMPTION    
         if context["consumption_prediction"]:
-            self.receive_Priority.append(Priority_Object("Consumption", 3, context["consumption_prediction"]/2))
+            self.receive_consumption(context)
 
         self.receive_EVS(context)
 
