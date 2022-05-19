@@ -192,6 +192,9 @@ class Decision_Alg:
 
     def give_Stationary_Batteries(self, context, expected_remaining):
         #STATIONARY BATTERY
+
+        if len(context["stationary_Batteries"]) == 0:
+            return
         
         #if solar panels are producing to much and batteries dont have enough free space, they should
         #make room
@@ -241,7 +244,9 @@ class Decision_Alg:
         #if grid really low price fill everything?
         if context["grid"].kwh_price <= 0.005:
             grid_P = 1
-        elif min([b.kwh_price for b in context["stationary_Batteries"]]) > context["grid"].kwh_price or context["grid"].kwh_price <= 0.5 * context["grid"].average_kwh_price:
+        elif  context["grid"].kwh_price <= 0.5 * context["grid"].average_kwh_price or \
+                (len(context["stationary_Batteries"]) > 0 and \
+                    min([b.kwh_price for b in context["stationary_Batteries"]]) > context["grid"].kwh_price):
             grid_P = 1.5
         else:
             grid_P = 3
