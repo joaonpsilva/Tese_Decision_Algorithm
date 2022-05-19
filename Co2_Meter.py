@@ -19,21 +19,26 @@ class Co2_Meter:
     
     def amount_co2(self, stat_batteries, ev_garage):
         
-        curr_kWs_batteries = sum([battery.current_Capacity for battery in stat_batteries] + \
-            [ev.battery.current_Capacity for ev in ev_garage.get_All_Vehicles()])
-
-        amortize_batteries = curr_kWs_batteries - self.prev_kWs_batteries
-        self.prev_kWs_batteries = curr_kWs_batteries
-
-
+        
         totalenergy_batteries = self.total_produced_in_battery + self.total_grid_in_battery
         
         percentage_gridEnergy_in_battery = self.total_grid_in_battery / totalenergy_batteries \
                                                 if totalenergy_batteries > 0 else 0
+        
+
+        curr_kWs_batteries = sum([battery.current_Capacity for battery in stat_batteries] + \
+            [ev.battery.current_Capacity for ev in ev_garage.get_All_Vehicles()]) * percentage_gridEnergy_in_battery
+
+        amortize_batteries = curr_kWs_batteries - self.prev_kWs_batteries
+        self.prev_kWs_batteries = curr_kWs_batteries
 
         lost_in_out_dirty = percentage_gridEnergy_in_battery * (self.total_lost_in_in + self.total_lost_in_out)
-        
-        total_dirty_energy_consumed = self.total_grid_consumed_house + (self.total_grid_in_battery - amortize_batteries - lost_in_out_dirty - self.total_lost_to_Grid)
+
+
+        total_dirty_energy_consumed = self.total_grid_consumed_house + (self.total_grid_in_battery - \
+                                                                        amortize_batteries - \
+                                                                        lost_in_out_dirty - \
+                                                                        self.total_lost_to_Grid * percentage_gridEnergy_in_battery)
         return total_dirty_energy_consumed * 0.233
         #https://bulb.co.uk/carbon-tracker/
 
