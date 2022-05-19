@@ -1,6 +1,6 @@
 class Battery:
 
-    def __init__(self, soc = 0, battery_size = 50, charge_Rate = 5, battery_price = 10000, cycles = 5000):
+    def __init__(self, soc = 0, battery_size = 50, charge_Rate = 5, battery_price = 10000, cycles = 5000, energy_loss = 0.98):
         
         #https://thenextweb.com/news/ev-battery-basics-kw-kwh-electric-vehicle-charging-lingo
         self._charge_Rate = charge_Rate
@@ -10,7 +10,7 @@ class Battery:
         self.battery_price = battery_price
         self.cycles = cycles
 
-        self._loss = 0.98
+        self._loss = energy_loss
 
         self.calc_costToCharge()
 
