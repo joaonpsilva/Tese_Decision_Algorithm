@@ -63,9 +63,19 @@ class EV_Garage:
                 self.away_Evs.remove(ev)
 
                 #SOC
-                charged_soc = round(np.random.triangular(0, 0.2, 0.6, size=None),2) #ev might have charged
-                charged_soc = 0
-                ev.battery.soc = ev.battery.soc - (ev.batterry_Threshold * random.uniform(0.2, 0.8)) + charged_soc #previous soc - soc needed for previous trip + charged
+                #charged_soc = round(np.random.triangular(0, 0.2, 0.6, size=None),2) #ev might have charged
+                ev.battery.soc = ev.battery.soc - (ev.batterry_Threshold * random.uniform(0.2, 0.8)) #previous soc - soc needed for previous trip + charged
+
+                
+                #THRESHOLD
+                #max_T = min([3/24 * (time_left-1 if time_left > 1 else time_left) + ev.battery.soc, 0.8])
+                #mid = max_T/2 if max_T <= 0.3 else 0.3
+                #left = mid/2 if mid <= 0.1 else 0.1
+                    
+                ev.batterry_Threshold = round(np.random.triangular(0.1, 0.3, 0.8, size=None),2) #new battery threshold
+                
+                needed = ev.batterry_ThresholdKWH - ev.battery.current_Capacity
+                needed_hours = int(needed/ev.battery.charge_Rate + 1) if needed > 0 else 0
 
                 #DEPARTURE TIME
                 choosen_hour = random.choice(self.leave_hours)
@@ -74,10 +84,13 @@ class EV_Garage:
                 choosen_hour = choosen_hour - 24 if choosen_hour > 23 else choosen_hour
 
                 choosen_date = current_Date
-
-                if choosen_hour <= choosen_date.hour:
-                    choosen_date += timedelta(days=1)
                 choosen_date = choosen_date.replace(hour=choosen_hour)
+
+                if choosen_date <= current_Date:
+                    choosen_date += timedelta(days=1)
+                if choosen_date <= current_Date + timedelta(hours=needed_hours):
+                    choosen_date += timedelta(hours=needed_hours) - (choosen_date - current_Date)
+
 
                 
                 #DEPARTURE GUESS
@@ -91,11 +104,7 @@ class EV_Garage:
                 ev.departure_Time = current_Date + timedelta(hours=departure_guess)
 
 
-                #THRESHOLD
-                max_T = min([5/24 * (time_left-1 if time_left > 1 else time_left), 0.8])
-                mid = 0.15 if max_T <= 0.3 else 0.3
-                    
-                ev.batterry_Threshold = round(np.random.triangular(0.1, mid, max_T, size=None),2) #new battery threshold
+                
                                 
                 ev_info = {"dep_Time":time_left, "ev": ev}
                 self.parked_Evs.append(ev_info)
