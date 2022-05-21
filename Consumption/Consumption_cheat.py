@@ -1,7 +1,7 @@
 class Consumption_Cheat:
     def __init__(self, past_window, fileNumber) -> None:
 
-        self.f = open("cheat" + str(fileNumber) + ".txt", "r")
+        self.f = open("cheats/cheat" + str(fileNumber) + ".txt", "r")
         self.i = 0
         self.past_window = past_window
     
