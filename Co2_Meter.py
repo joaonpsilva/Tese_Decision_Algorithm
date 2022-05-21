@@ -16,6 +16,7 @@ class Co2_Meter:
         self.total_lost_in_in = 0
         self.total_grid_in_battery = 0
         self.total_produced_in_battery = 0
+        self.total_lost_to_Grid = 0
     
     def amount_co2(self, stat_batteries, ev_garage):
         
