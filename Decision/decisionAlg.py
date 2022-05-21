@@ -36,23 +36,24 @@ class Decision_Alg:
             self.give_Priority = [Priority_Object("Grid", 3, 999999)]
             decisions += self.make_Decisions()
 
-
-        
         return decisions
     
     def receive_consumption(self, context):
-
-        free_storage = sum([ev.battery.battery_size - ev.battery.current_Capacity \
+        
+        #free storage in stationary and evs
+        free_storage = sum([ max([ev.battery.battery_size - ev.battery.current_Capacity, ev.battery.charge_Rate]) \
             for ev in context["connected_EVs"] ]) + \
-                sum([battery.battery_size - battery.current_Capacity \
+                sum([max([battery.battery_size - battery.current_Capacity, battery.charge_Rate]) \
                     for battery in context["stationary_Batteries"]])
 
 
+        #energy needed by evs
         ev_energy_need = sum([ev.batterry_ThresholdKWH - ev.battery.current_Capacity \
             for ev in context["connected_EVs"] \
                 if ev.batterry_ThresholdKWH > ev.battery.current_Capacity])
         
 
+        #energy that can be given
         ev_energy_give = sum([ev.battery.current_Capacity - ev.batterry_ThresholdKWH \
             for ev in context["connected_EVs"] \
                 if ev.batterry_ThresholdKWH < ev.battery.current_Capacity])
@@ -62,19 +63,22 @@ class Decision_Alg:
         energy_give = ev_energy_give + batery_give + context["production"]
         energy_need = ev_energy_need
 
+        #energy that will remaing after evs
         energy_remaining = energy_give - energy_need
+
+        #production energy that would be trownd away
         waste = max([context["production"] - free_storage, 0])
         times_greater = energy_remaining / context["consumption_prediction"]
 
-        if energy_remaining < 0:
-            c = 0
-        elif times_greater >= 5:
+        if energy_remaining < 0:    #there is no energy available, will have to take from grid
+            c = waste #0
+        elif times_greater >= 5:    #there is plenty energy, reserve with no fear
             c = max([context["consumption_prediction"], waste])
         else:
-            if context["grid"].kwh_price > context["grid"].average_kwh_price:
+            if context["grid"].kwh_price > context["grid"].average_kwh_price:   #there is energy and grid is expensive
                 c = max([context["consumption_prediction"], waste])
             else:
-                c = waste
+                c = waste   #grid is not expensive, there is energy, reserve only waste
         
         self.receive_Priority.append(Priority_Object("Consumption", 3, c))
         
