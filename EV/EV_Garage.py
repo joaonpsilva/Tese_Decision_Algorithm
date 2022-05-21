@@ -74,7 +74,7 @@ class EV_Garage:
                     
                 ev.batterry_Threshold = round(np.random.triangular(0.1, 0.3, 0.8, size=None),2) #new battery threshold
                 
-                needed = ev.batterry_ThresholdKWH - ev.battery.current_Capacity
+                needed = ev.batterry_ThresholdKWH# - ev.battery.current_Capacity
                 needed_hours = int(needed/ev.battery.charge_Rate + 1) if needed > 0 else 0
 
                 #DEPARTURE TIME
