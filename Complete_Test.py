@@ -1,3 +1,4 @@
+from audioop import avg
 from main import execute
 from prettytable import PrettyTable
 import matplotlib.pyplot as plt
@@ -87,10 +88,6 @@ def do(scenario):
 
 
 
-
-
-    
-
 scenario1 = Args("Scenario1")
 scenario1.pA = 10
 
@@ -103,44 +100,94 @@ scenario3.pA = 70
 scenarios = [scenario1, scenario2, scenario3]
 subscenarios = [sub1, sub2, sub3, sub4]
 
-house = 0
-directory = "graphs/" + str(house) + "/"
-Path(directory).mkdir(parents=True, exist_ok=True)
-
-
-
+f = open("r.txt", "w")
 for scenario in scenarios:
 
-    scenario_directory = directory + str(scenario)
-    Path(scenario_directory).mkdir(parents=True, exist_ok=True)
+    average = [[],[],[],[],[],[],[],[],[],[]]
+
+    for house in range(10):
+        print("house: ", house)
+        directory = "graphs/" + str(house) + "/"
+        Path(directory).mkdir(parents=True, exist_ok=True)
+
+
+        scenario.house = house
+        scenario_directory = directory + str(scenario)
+        Path(scenario_directory).mkdir(parents=True, exist_ok=True)
+        
+        #SCENARIO PLOT
+        plt.figure(figsize=(25,10))
+        plt.title(str(scenario) + ", House " + str(house))
+        plt.ylabel('Total Cost €')
+        plt.xlabel('month')
+
+        for alg, style,index in zip(["smart", "base"], ["-", ":"], [0,5]):
+
+            scenario_alg = copy.copy(scenario)
+            scenario_alg.alg = alg
+
+            results = do(scenario_alg)
+            average[index].append([r[1] for r in results])
+        
+            plt.plot([r[1] for r in results], linewidth=8, color = "black", linestyle=style, label=str(scenario_alg))
+            
+            #subMarker = ["o", "s", "X", "p"]
+            subStyle = ["red", "orange", "green", "blue"]
+
+            for subscenario, color in zip(subscenarios, subStyle):
+                index+=1
+                scen = copy.copy(scenario_alg)
+                scen = subscenario(scen)
+                results = do(scen)
+                average[index].append([r[1] for r in results])
+
+                plt.plot([r[1] for r in results], linewidth=4, linestyle=style, color=color, label=str(scen))
+
+        plt.legend()
+        plt.savefig(scenario_directory + "/" + str(scenario) + ".png")
     
-    #SCENARIO PLOT
+
+    plotStyle = [("black", 8, "-", "Smart"),
+                ("red", 4, "-", "Smart_sub1"),
+                ("orange", 4, "-", "Smart_sub2"),
+                ("green", 4, "-", "Smart_sub3"),
+                ("blue", 4, "-", "Smart_sub4"),
+                ("black", 8, ":", "Base"),
+                ("red", 4, ":", "Base_sub1"),
+                ("orange", 4, ":", "Base_sub2"),
+                ("green", 4, ":", "Base_sub3"),
+                ("blue", 4, ":", "Base_sub4")]
+
+    average_final = [[],[],[],[],[],[],[],[],[],[]]
+    for sen in range(len(average)):
+        for mont in range(12):
+            average_final[sen].append(sum([house[mont] for house in average[sen]]) / 10)
+        
+        f.write(plotStyle[sen][3] + "  " + str(sum(average_final[sen])) + "\n")
+    
     plt.figure(figsize=(25,10))
-    plt.title(scenario)
+    plt.title(str(scenario) + " Average")
     plt.ylabel('Total Cost €')
     plt.xlabel('month')
 
-    for alg, color in zip(["smart", "base"], ["-", "-."]):
-
-        scenario_alg = copy.copy(scenario)
-        scenario_alg.alg = alg
-
-        results = do(scenario_alg)
     
-        plt.plot([r[1] for r in results], linewidth=8, color = "black", linestyle=color, label=str(scenario))
-        
-        subMarker = ["o", "s", "X", "p"]
-        subStyle = ["red", "orange", "green", "blue"]
-
-        for subscenario, plotstyle, plotmarker in zip(subscenarios, subStyle, subMarker):
-            scen = copy.copy(scenario_alg)
-            scen = subscenario(scen)
-            results = do(scen)
-
-            plt.plot([r[1] for r in results], linewidth=4, linestyle=color, color=plotstyle, label=str(scen))
-
+                
+    for l,style in zip(average_final, plotStyle) :
+        plt.plot(l, linewidth=style[1], linestyle=style[2], color=style[0], label=style[3])
+    
     plt.legend()
-    plt.savefig(scenario_directory + "/" + str(scenario) + ".png")
+    plt.savefig(str(scenario) + ".png")
+
+    f.write("--------")
+
+f.close()
+
+
+
+
+
+    
+
 
 
 
