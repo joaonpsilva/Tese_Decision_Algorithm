@@ -163,7 +163,7 @@ def execute(arg):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-ev", type=int, default = 3, help="number of Evs")
+    parser.add_argument("-ev", type=int, default = 2, help="number of Evs")
     parser.add_argument("-batt", type=int, default = 1, help="number of Stationary Batteries")
     parser.add_argument("-alg", type=str, default="smart", choices=["smart", "base"], help="Decision algorithm")
     parser.add_argument("-house", type=int, default = 0, help="Test File")
@@ -172,7 +172,7 @@ if __name__ == "__main__":
     parser.add_argument("-grid", type=str, default="dynamic", choices=["flat", "dynamic"], help="Grid Price")
     parser.add_argument('--cheat', action='store_true')
     args = parser.parse_args()
-
+    
 
     t = PrettyTable(['Run', 'Total Cost', 'Bill Cost', 'Battery Cost', 'Impaired', "CO2",'House Consumption', 'Production'])
     simulation = execute(args)
@@ -205,15 +205,6 @@ if __name__ == "__main__":
 
     print(t)
 
-    #PLOTS
 
-    import matplotlib.pyplot as plt
 
-    plt.figure(figsize=(25,10))
-    plt.plot([r[-1] for r in results], color='red', label='Production')
-    plt.plot([r[-2] for r in results], color='blue', label='House Consumption')
-    plt.title("Production vs House Consumption")
-    plt.ylabel('kWh')
-    plt.xlabel('month')
-    plt.legend()
-    plt.savefig("graphs/Production vs House Consumption.png")
+
