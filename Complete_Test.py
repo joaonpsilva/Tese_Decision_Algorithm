@@ -4,6 +4,7 @@ from prettytable import PrettyTable
 import matplotlib.pyplot as plt
 from pathlib import Path
 import copy
+import csv
 
 class Args:
 
@@ -56,7 +57,7 @@ def do(scenario):
     print(scenario)
 
     simulation = execute(scenario)
-    t = PrettyTable(['Run', 'Total Cost', 'Bill Cost', 'Battery Cost', 'Impaired', "CO2",'House Consumption', 'Production'])
+    #t = PrettyTable(['Run', 'Total Cost', 'Bill Cost', 'Battery Cost', 'Impaired', "CO2",'House Consumption', 'Production'])
     month=0
     results = []
     for month_results in simulation:
@@ -71,10 +72,10 @@ def do(scenario):
                         round(house_consumption,2), \
                         round(production,2)]
 
-        t.add_row(result)
+        #t.add_row(result)
         results.append(result)
 
-    t.add_row(["Total", round(sum([r[1] for r in results]),2), \
+    results.append(["Total", round(sum([r[1] for r in results]),2), \
                         round(sum([r[2] for r in results]) ,2), \
                         round(sum([r[3] for r in results]),2), \
                         sum([r[4] for r in results]), \
@@ -82,9 +83,9 @@ def do(scenario):
                         round(sum([r[6] for r in results]),2), \
                         round(sum([r[7] for r in results]),2)])
 
-    print(t)
+    #print(t)
 
-    return results
+    return results, ['Run', 'Total Cost', 'Bill Cost', 'Battery Cost', 'Impaired', "CO2",'House Consumption', 'Production']
 
 
 
@@ -100,7 +101,7 @@ scenario3.pA = 70
 scenarios = [scenario1, scenario2, scenario3]
 subscenarios = [sub1, sub2, sub3, sub4]
 
-f = open("r.txt", "w")
+f_average = open("graphs/average/average.txt", "w")
 for scenario in scenarios:
 
     average = [[],[],[],[],[],[],[],[],[],[]]
@@ -126,22 +127,41 @@ for scenario in scenarios:
             scenario_alg = copy.copy(scenario)
             scenario_alg.alg = alg
 
-            results = do(scenario_alg)
-            average[index].append([r[1] for r in results])
+            #DO BASE SCENARIO
+            results, header = do(scenario_alg)
+            f = open(scenario_directory + "/" + str(scenario_alg) + ".csv", 'w')
+            writer = csv.writer(f)
+            writer.writerow(header)
+            writer.writerows(results)
+            f.close()
+
+
+            average[index].append([r[1] for r in results[:-1]])
         
-            plt.plot([r[1] for r in results], linewidth=8, color = "black", linestyle=style, label=str(scenario_alg))
+            plt.plot([r[1] for r in results[:-1]], linewidth=8, color = "black", linestyle=style, label=str(scenario_alg))
             
             #subMarker = ["o", "s", "X", "p"]
             subStyle = ["red", "orange", "green", "blue"]
 
+
+            #ITERATE OVER SUBSCENARIOS
             for subscenario, color in zip(subscenarios, subStyle):
                 index+=1
                 scen = copy.copy(scenario_alg)
                 scen = subscenario(scen)
-                results = do(scen)
-                average[index].append([r[1] for r in results])
+                
 
-                plt.plot([r[1] for r in results], linewidth=4, linestyle=style, color=color, label=str(scen))
+                #DO SUBSCENARIO
+                results, header = do(scen)
+                f = open(scenario_directory + "/" + str(scen) + ".csv", 'w')
+                writer = csv.writer(f)
+                writer.writerow(header)
+                writer.writerows(results)
+                f.close()
+                
+                average[index].append([r[1] for r in results[:-1]])
+
+                plt.plot([r[1] for r in results[:-1]], linewidth=4, linestyle=style, color=color, label=str(scen))
 
         plt.legend()
         plt.savefig(scenario_directory + "/" + str(scenario) + ".png")
@@ -163,7 +183,7 @@ for scenario in scenarios:
         for mont in range(12):
             average_final[sen].append(sum([house[mont] for house in average[sen]]) / 10)
         
-        f.write(plotStyle[sen][3] + "  " + str(sum(average_final[sen])) + "\n")
+        f_average.write(plotStyle[sen][3] + "  " + str(sum(average_final[sen])) + "\n")
     
     plt.figure(figsize=(25,10))
     plt.title(str(scenario) + " Average")
@@ -178,9 +198,9 @@ for scenario in scenarios:
     plt.legend()
     plt.savefig(str(scenario) + ".png")
 
-    f.write("--------")
+    f_average.write("\n\n")
 
-f.close()
+f_average.close()
 
 
 
