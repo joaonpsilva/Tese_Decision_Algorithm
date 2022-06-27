@@ -18,8 +18,8 @@ class Decision_Algorithm:
         
         new_decisions = []
         if simulation_Error > 0:    #consumption was actually bigger than expected
-            self.receive_Priority = [Priority_Object("Consumption", 3, simulation_Error)]
-            self.give_Priority = [Priority_Object("Grid", 3, 999999)]
+            self.receive_Priority = [Priority_Object("Consumption", 4, simulation_Error)]
+            self.give_Priority = [Priority_Object("Grid", 4, 999999)]
             new_decisions = self.make_Decisions()
         
         return new_decisions

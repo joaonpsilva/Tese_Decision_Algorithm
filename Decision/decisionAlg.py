@@ -51,14 +51,14 @@ class Decision_Alg(Decision_Algorithm):
             p = 0
         elif times_greater >= 5:    #there is plenty energy, reserve with no fear
             c = max([context["consumption_prediction"], waste])
-            p=3
+            p=4
         else:
             if context["grid"].kwh_price > context["grid"].average_kwh_price:   #there is energy and grid is expensive
                 c = max([context["consumption_prediction"], waste])
-                p=3
+                p=4
             else:
                 c = context["consumption_prediction"] * times_greater / 5   #grid is not expensive, there is energy, reserve only waste
-                self.receive_Priority.append(Priority_Object("Consumption", 3, c))
+                self.receive_Priority.append(Priority_Object("Consumption", 4, c))
                 c = max([context["consumption_prediction"], waste])
                 p = 0
 
@@ -88,9 +88,9 @@ class Decision_Alg(Decision_Algorithm):
 
                 e = e / ev.battery.loss
                 if time_diff - time2charge <= timedelta(hours=5):   #Account for error
-                    self.receive_Priority.append(Priority_Object(ev, 3, e))
+                    self.receive_Priority.append(Priority_Object(ev, 4, e))
                 else:
-                    self.receive_Priority.append(Priority_Object(ev, 2, e))
+                    self.receive_Priority.append(Priority_Object(ev, 3, e))
             
             #EV may appear twice in list with different priorities
             if max_can_charge > 0 and free_battery_space > 0:
@@ -135,7 +135,7 @@ class Decision_Alg(Decision_Algorithm):
 
                 e = e / battery.loss
                 #1.5 priority -> evs leaving soon
-                self.receive_Priority.append(Priority_Object(battery, 1.5, e))
+                self.receive_Priority.append(Priority_Object(battery, 2, e))
             
             if max_can_charge > 0 and free_battery_space > 0:   #if can still charge more
                 e = min([max_can_charge, free_battery_space] )
@@ -159,9 +159,9 @@ class Decision_Alg(Decision_Algorithm):
             e = e * ev.battery.loss
             
             if time_diff <= timedelta(hours=4):     
-                self.give_Priority.append(Priority_Object(ev, 1.5, e))
-            else:
                 self.give_Priority.append(Priority_Object(ev, 2, e))
+            else:
+                self.give_Priority.append(Priority_Object(ev, 3, e))
 
 
     def give_Stationary_Batteries(self, context):
@@ -203,7 +203,7 @@ class Decision_Alg(Decision_Algorithm):
             if capacity > 0 and max_can_discharge > 0:
                 e = min([max_can_discharge, capacity] )
                 e = e * battery.loss
-                self.give_Priority.append(Priority_Object(battery, 2, e))
+                self.give_Priority.append(Priority_Object(battery, 3, e))
     
     def give_Production(self,context):
         self.give_Priority.append(Priority_Object("Production", 0, context["production"]))
@@ -217,7 +217,7 @@ class Decision_Alg(Decision_Algorithm):
         elif  context["grid"].kwh_price <= 0.5 * context["grid"].average_kwh_price or \
                 (len(context["stationary_Batteries"]) > 0 and \
                     min([b.kwh_price for b in context["stationary_Batteries"]]) > context["grid"].kwh_price):
-            grid_P = 1.5
+            grid_P = 2
         else:
-            grid_P = 3
+            grid_P = 4
         self.give_Priority.append(Priority_Object("Grid", grid_P, 99999999))

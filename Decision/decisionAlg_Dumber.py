@@ -7,14 +7,14 @@ class Decision_Alg_Dumber(Decision_Algorithm):
 
     
     def receive_consumption(self,context):
-        self.receive_Priority.append(Priority_Object("Consumption", 3, context["consumption_prediction"]))
+        self.receive_Priority.append(Priority_Object("Consumption", 4, context["consumption_prediction"]))
 
     def receive_EVS(self,context):
         for ev in context["connected_EVs"]:
             free_battery_space = ev.battery.battery_size - ev.battery.current_Capacity
             e = min([free_battery_space, ev.battery.charge_Rate])
             e = e / ev.battery.loss
-            self.receive_Priority.append(Priority_Object(ev, 3, e))
+            self.receive_Priority.append(Priority_Object(ev, 4, e))
 
 
     def receive_Stationary_Batteries(self,context):
@@ -41,11 +41,11 @@ class Decision_Alg_Dumber(Decision_Algorithm):
         for battery in context["stationary_Batteries"]:
             e = min([battery.charge_Rate, battery.current_Capacity] )
             e = e * battery.loss
-            self.give_Priority.append(Priority_Object(battery, 2, e))
+            self.give_Priority.append(Priority_Object(battery, 3, e))
 
 
     def give_Grid(self,context):
-        self.give_Priority.append(Priority_Object("Grid", 3, 99999999))
+        self.give_Priority.append(Priority_Object("Grid", 4, 99999999))
 
 
 
