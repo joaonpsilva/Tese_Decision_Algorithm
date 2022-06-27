@@ -5,17 +5,6 @@ from Decision.Decision_Algorithm import Decision_Algorithm
 
 class Decision_Alg_Dumber(Decision_Algorithm):
 
-    def correct_simul_error(self,context,decisions):
-        simulation_Error = context["Real_consumption"] - context["consumption_prediction"]
-        
-        new_decisions = []
-        if simulation_Error > 0:
-            self.receive_Priority = [Priority_Object("Consumption", 3, simulation_Error)]
-            self.give_Priority = [Priority_Object("Grid", 3, 999999)]
-            new_decisions += self.make_Decisions()
-        
-        return new_decisions
-
     
     def receive_consumption(self,context):
         self.receive_Priority.append(Priority_Object("Consumption", 3, context["consumption_prediction"]))

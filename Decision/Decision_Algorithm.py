@@ -12,7 +12,17 @@ class Decision_Algorithm:
         On real world this would be handled when it happened but in the
         simulation this needs to be taken care of here"""
 
-        raise NotImplementedError
+        house_cons = [d.energy_amount for d in decisions if d.obj == "Consumption"]
+        house_cons = sum(house_cons) if len(house_cons) > 0 else 0
+        simulation_Error = context["Real_consumption"] - house_cons
+        
+        new_decisions = []
+        if simulation_Error > 0:    #consumption was actually bigger than expected
+            self.receive_Priority = [Priority_Object("Consumption", 3, simulation_Error)]
+            self.give_Priority = [Priority_Object("Grid", 3, 999999)]
+            new_decisions = self.make_Decisions()
+        
+        return new_decisions
 
     
     def analyse(self, context):

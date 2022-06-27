@@ -9,20 +9,6 @@ class Decision_Alg(Decision_Algorithm):
     def __init__(self):
         super().__init__()
         self.expected_error = 2
-    
-    def correct_simul_error(self, context, decisions):
-
-        house_cons = [d.energy_amount for d in decisions if d.obj == "Consumption"]
-        house_cons = house_cons[0] if len(house_cons) > 0 else 0
-        simulation_Error = context["Real_consumption"] - house_cons
-        
-        new_decisions = []
-        if context["consumption_prediction"] is None or simulation_Error > 0:    #consumption was actually bigger than expected
-            self.receive_Priority = [Priority_Object("Consumption", 3, simulation_Error)]
-            self.give_Priority = [Priority_Object("Grid", 3, 999999)]
-            new_decisions = self.make_Decisions()
-        
-        return new_decisions
         
     
     def receive_consumption(self, context):
@@ -61,16 +47,22 @@ class Decision_Alg(Decision_Algorithm):
         times_greater = energy_remaining / context["consumption_prediction"]
 
         if energy_remaining < 0:    #there is no energy available, will have to take from grid
-            c = waste #0
+            c = max([context["consumption_prediction"], waste]) #0
+            p = 0
         elif times_greater >= 5:    #there is plenty energy, reserve with no fear
             c = max([context["consumption_prediction"], waste])
+            p=3
         else:
             if context["grid"].kwh_price > context["grid"].average_kwh_price:   #there is energy and grid is expensive
                 c = max([context["consumption_prediction"], waste])
+                p=3
             else:
-                c = waste   #grid is not expensive, there is energy, reserve only waste
-        
-        self.receive_Priority.append(Priority_Object("Consumption", 3, c))
+                c = context["consumption_prediction"] * times_greater / 5   #grid is not expensive, there is energy, reserve only waste
+                self.receive_Priority.append(Priority_Object("Consumption", 3, c))
+                c = max([context["consumption_prediction"], waste])
+                p = 0
+
+        self.receive_Priority.append(Priority_Object("Consumption", p, c))
         
 
 
