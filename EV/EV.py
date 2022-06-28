@@ -1,8 +1,18 @@
+"""
+Eletric Vehicle Class
+"""
+
 from Battery import Battery
 
 class EV:
     
     def __init__(self, soc=0, battery_size = 24, charge_Rate = 3, batterry_Threshold = 0):
+
+        """
+        batterry_Threshold: 0 to 1 float
+        departure time: datetime object
+        battery: Battery object
+        """
         
         self._batterry_Threshold = batterry_Threshold
         self._departure_Time = None
