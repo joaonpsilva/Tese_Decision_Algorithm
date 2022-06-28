@@ -1,8 +1,16 @@
+"""
+Battery Class
+Is used as EV Battery and Stationary Battery.
+Is a Energy storage. Can charge and discharge energy.
+"""
+
 class Battery:
 
     def __init__(self, soc = 0, battery_size = 50, charge_Rate = 5, battery_price = 10000, cycles = 5000, energy_loss = 0.98):
-        
-        #https://thenextweb.com/news/ev-battery-basics-kw-kwh-electric-vehicle-charging-lingo
+        """
+        Initialize Battery
+        """
+
         self._charge_Rate = charge_Rate
         self._battery_size = battery_size
         self._current_Capacity = battery_size * soc
@@ -16,17 +24,44 @@ class Battery:
 
     
     def calc_costToCharge(self):
+        """
+        Simplistic Funtion to define a cost to charge (depreciation)
+        through battery price and cycles
+        """
         self.price_per_kWh = self.battery_price / (self.cycles * self.battery_size) 
     
  
     def __repr__(self) -> str:
+        """
+        ToString()
+        """
         return "Stationary_Battery_{current_Capacity}KWh".format(current_Capacity=self.current_Capacity)
     
     def charge(self, amount):
+        """
+        Charge Battery
+        amount: kWh
+        returns: Depreciation Cost
+        """
+
         self.current_Capacity += amount  * self.loss
+        
+        cost = self.kwh_price * amount
+        return cost
     
     def discharge(self, amount):
+        """
+        Discharge Battery
+        amount: kWh
+        returns: Depreciation Cost
+        """
         self.current_Capacity -= amount / self.loss
+
+        cost = 0
+        return cost
+
+
+    #SETTERS AND GETTERS
 
     @property
     def loss(self):

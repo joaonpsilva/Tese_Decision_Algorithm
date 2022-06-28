@@ -1,6 +1,14 @@
+"""
+GRID CLASS
+Distribution Grid can supply energy
+"""
+
 import math
 
 class Grid_Linear:
+    """
+    GRID with linear price per kWh
+    """
     def __init__(self) -> None:
         pass
 
@@ -17,10 +25,16 @@ class Grid_Linear:
 
 
 class Grid_sinusoidal:
+    """
+    GRID with variable price per kWh
+    """
     def __init__(self, hour = 0) -> None:
         self.hour = hour
     
     def update(self, date):
+        """
+        receive current hour from the simulation to update price
+        """
         self.hour = date.hour
 
     @property
