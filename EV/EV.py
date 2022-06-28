@@ -16,10 +16,10 @@ class EV:
         
     
     def charge(self, amount):
-        self.battery.charge(amount)
+        return self.battery.charge(amount)
     
     def discharge(self, amount):
-        self.battery.discharge(amount)
+        return self.battery.discharge(amount)
 
 
     @property
