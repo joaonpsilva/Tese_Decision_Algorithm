@@ -1,3 +1,13 @@
+"""
+Class that implements same methods as consumption prediction module
+
+Consumption prediction was run for 10 houses and the prediction values were
+stored in files.
+
+This class reads thoses files so that the simulation runs faster
+(doesnt have to keep training ml models)
+"""
+
 class Consumption_Cheat:
     def __init__(self, past_window, fileNumber) -> None:
 

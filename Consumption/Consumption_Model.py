@@ -1,3 +1,7 @@
+"""Base ML Model class
+
+parent class to specific and generic models"""
+
 import pickle
 
 class ML_Model:

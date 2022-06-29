@@ -1,3 +1,10 @@
+"""
+Consumption Prediction class
+
+Contains a generic and a specific model
+
+Predicts energy consumption values in 1h time steps
+"""
 import pandas as pd
 from Consumption.Consumption_Generic_Model import Consumption_Generic_Model
 from Consumption.Consumption_Specific_Model import Consumption_Specific_Model
@@ -12,14 +19,16 @@ class Consumption_Prediction:
                 
         self.load_details(past_window,featuresNames, targetName )
 
+        #Create Instances of specific and generic models
         self.specific_Model = Consumption_Specific_Model(past_window=past_window, featuresNames = featuresNames, targetName = targetName)
-
         if self.best_model == "generic":
             self.generic_Model = Consumption_Generic_Model(past_window=past_window, featuresNames = featuresNames, targetName = targetName)
 
         self.hourIndex = 0
 
     def load_details(self, past_window,featuresNames, targetName):
+        """Load Details from file or create them"""
+
         try:
             f = open("Consumption/Models/Consumption_Model_Details.json")
             info = json.load(f)
@@ -45,6 +54,8 @@ class Consumption_Prediction:
             self.userKnownDf = pd.DataFrame(data={key:[] for key in featuresNames})
     
     def save_detais(self):
+        """Save details in file NOT USED"""
+
         # Serializing json 
         d = { 
             "past_window": self.past_window,
@@ -62,42 +73,64 @@ class Consumption_Prediction:
         
         #save
         self.userKnownDf.to_csv("Consumption/Models/UserKnowDf.csv", index=False)
+
+
     
     def append_record(self, record):
+        """Receive true value from meter and append to known values"""
+
         #append record
         self.userKnownDf = self.userKnownDf.append(record[self.featuresNames])
+
+        #remove older then 1 year values
         if len(self.userKnownDf) > 24*365:
             self.userKnownDf = self.userKnownDf.iloc[1:]
         
     
     def genericVSspecific(self):
+        """Compares performance of specific vs generic models and selects the best"""
 
+        #Specific model doesnt have enough predictions to compare
         if len(self.specific_Model_Predicitons) < 48:
             return "generic"
 
+        #read true values
         true = self.userKnownDf[self.targetName].iloc[-48:].values
         
+        #Calculate MAE valeus of both models for the last 48h
         generic_mae = mean_absolute_error(true, self.generic_Model_Predictions[-48])
         specific_mae = mean_absolute_error(true, self.specific_Model_Predicitons[-48])
 
+        #select best model
         if generic_mae < specific_mae:
             return "generic"
         else:
             return "specific"
     
-    def retrain(self):
 
+    def retrain(self):
+        """
+        Retrain model with more recent records
+        """    
+
+        #Specific Model
         self.specific_Model.train(self.userKnownDf)
 
+        #Only train generic model if is still used
         if self.best_model == "generic":
             self.generic_Model.train(self.userKnownDf)
     
+
+
     def make_new_prediction(self):
+        """Make prediction of next value"""
         
+        #Specific Model doesnt not exist in the 1st week
         if self.hourIndex >= 7*24:
             specific_prediction = self.specific_Model.predict_next(self.userKnownDf)
             self.prediction = specific_prediction
 
+        #Only use generic if it still is best model
         if self.best_model == "generic":
             generic_prediction = self.generic_Model.predict_next(self.userKnownDf)
             self.prediction = generic_prediction
@@ -105,27 +138,36 @@ class Consumption_Prediction:
 
         return self.prediction
     
+
+
     def new_Record(self, record):
+        """Receive new record from meter"""
         
         self.hourIndex += 1
 
+        #store record in dataframe
         self.append_record(record)
         
+
+        #Check which model is the best currently
         if self.best_model == "generic":
             self.best_model = self.genericVSspecific()
 
+        #Retrain models every week
         if self.hourIndex % (7*24) == 0:
             self.retrain()
 
+        #Make new predictions
         if self.hourIndex > 24:
             self.make_new_prediction()
     
+
     def get_Prediction(self):
         return self.prediction
         
 
         
-
+#___________IGNORE_______________
 if __name__ == "__main__":
     import os
     print("----------------------")

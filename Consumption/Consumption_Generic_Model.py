@@ -1,3 +1,7 @@
+"""
+GENRIC Model
+"""
+
 from Consumption.Consumption_Model import ML_Model
 from keras.preprocessing.sequence import TimeseriesGenerator
 from tensorflow.keras.models import Sequential
@@ -8,11 +12,15 @@ class Consumption_Generic_Model(ML_Model):
     
     def __init__(self, modelPath="Consumption/Models/Generic", past_window=24, featuresNames = [], targetName = None):
         super().__init__(modelPath, past_window, featuresNames, targetName)
+
+        #Load Scalers from files
         self.x_scaler = self.load_model(self.modelPath + "/x_scaler.sav")
         self.y_scaler = self.load_model(self.modelPath + "/y_scaler.sav")
     
     
     def innit_Model(self):
+        """Create new LSTM"""
+
         #OPTIMIZAVEL
         self.model = Sequential()
         self.model.add(LSTM(units=128, return_sequences=True,input_shape=(self.past_window, len(self.featuresNames))))
@@ -21,6 +29,9 @@ class Consumption_Generic_Model(ML_Model):
         self.model.compile(optimizer = 'adam', loss = 'mean_squared_error', metrics = 'mean_absolute_error')
     
     def do_train(self, train_generator, showplot=False):
+        """
+        Train Model
+        """
         early_stopping = EarlyStopping(monitor="loss", 
                                     patience=2, 
                                     mode="min")
@@ -33,6 +44,11 @@ class Consumption_Generic_Model(ML_Model):
                                     )
     
     def train(self, df):
+        """
+        Prepare Dataframe to be trained and call do_train funtion
+        """
+        
+        #Scale
         x_train = self.x_scaler.transform(df[self.featuresNames].values)
         y_train = self.y_scaler.transform(df[self.targetName].values.reshape(-1,1))
 
@@ -41,6 +57,9 @@ class Consumption_Generic_Model(ML_Model):
         self.do_train(train_generator)
 
     def predict_next(self, df):
+        """
+        Predict next consumption value
+        """
 
         #if df only contains 24hours should add 1 more radom value to x_test
         x_test = self.x_scaler.transform(df[self.featuresNames].iloc[-(self.past_window + 1):].values)
