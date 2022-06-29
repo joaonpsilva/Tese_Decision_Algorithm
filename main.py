@@ -12,7 +12,7 @@ from EV.EV_Garage import EV_Garage
 from Production.Production_Meter import Production_Meter
 from datetime import datetime, timedelta
 from Battery import Battery
-from Decision.decisionAlg import Decision_Alg
+from Decision.decisionAlg_Smart import Decision_Alg_Smart
 from Decision.decisionAlg_Dumber import Decision_Alg_Dumber
 from Grid import Grid_Linear, Grid_sinusoidal
 from Co2_Meter import Co2_Meter
@@ -76,7 +76,7 @@ def execute(arg):
 
     #Initialize Decision Algorithm
     if arg.alg == "smart":
-        decision_algorithm = Decision_Alg()
+        decision_algorithm = Decision_Alg_Smart()
     elif arg.alg == "base":
         decision_algorithm = Decision_Alg_Dumber()
 

@@ -1,9 +1,18 @@
+"""
+Decision Algorithm Abstract class
+Implements the basic flow of the decision algorithm
+"""
+
+
 from Decision.Priority_Object import Priority_Object
 from Decision.Decision import Decision
 from Battery import Battery
 
 class Decision_Algorithm:
     def __init__(self):
+        """
+        Initialize priority lists
+        """
         self.receive_Priority = []
         self.give_Priority = []
 
@@ -27,21 +36,34 @@ class Decision_Algorithm:
     
     def analyse(self, context):
         """ this method will construct the priority lists
-        and then mek the decisions based on the priorities"""
+        and then mek the decisions based on the priorities
+        
+        context: Dictionary with simulation elements
 
+        returns list of Decision Objects
+        """
+
+        #Reset Lists
         self.receive_Priority = []
         self.give_Priority = []
 
+        #Define Priority
         self.define_receive_Priority(context)
         self.define_give_Priority(context)
 
+        #make decisions based on priority lists
         decisions = self.make_Decisions()
 
+        #correct household consumption (in case more energy is needed than predicted)
+        #In real world would not be necessary
         decisions += self.correct_simul_error(context,decisions)
 
         return decisions
 
     
+    """
+    Flowcharts are implemented in the children classes
+    """
     def receive_consumption(self,context):
         raise NotImplementedError
     def receive_EVS(self,context):
@@ -62,8 +84,9 @@ class Decision_Algorithm:
     
     def define_receive_Priority(self, context):
         
-        #Define CHARGE priority off all elements
-        self.receive_consumption(context)
+        """Define CHARGE priority and quantity off all elements"""
+
+        self.receive_consumption(context)  
         self.receive_EVS(context)
         self.receive_Stationary_Batteries(context)
         self.receive_Grid(context)
@@ -73,7 +96,8 @@ class Decision_Algorithm:
 
     def define_give_Priority(self, context):
 
-        #Define Discharge priority off all elements
+        """Define DISCHARGE priority and quantity off all elements"""
+
         self.give_Production(context)
         self.give_EVs(context)
         self.give_Stationary_Batteries(context)
@@ -83,17 +107,21 @@ class Decision_Algorithm:
     
 
     def make_Decisions(self):
-        """ make decisions based on the priority lists"""
+        """
+        make decisions based on the priority lists 
+        """
 
         self.give_Priority = [obj for obj in self.give_Priority if obj.amount_kw > 0]
         self.receive_Priority = [obj for obj in self.receive_Priority if obj.amount_kw > 0]
         decisions = []
 
+        #iterate through object in the charge list starting with items with more priority
         for obj_receive in self.receive_Priority:
             
-            #remove givers that were exausted in previous loop
+            #remove discharge objects that were exausted in previous loop
             self.give_Priority = [obj for obj in self.give_Priority if obj.amount_kw > 0]
 
+            #iterate through object in the discharge list starting with items with more priority
             for obj_give in self.give_Priority: #Find who will give energy
 
 
@@ -116,7 +144,6 @@ class Decision_Algorithm:
                         decisions.append(Decision(obj_give.object, "discharge", obj_receive.amount_kw))
                         break
                     else:   #giver doesnt have enough, receiver is not satisfied
-                        #CHECK IF CAN DO THIS
                         decisions.append(Decision(obj_receive.object, "charge", obj_give_amount_kw_temp))
                         decisions.append(Decision(obj_give.object, "discharge", obj_give_amount_kw_temp))
                         obj_receive.amount_kw -= obj_give_amount_kw_temp

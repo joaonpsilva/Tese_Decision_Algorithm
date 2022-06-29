@@ -1,3 +1,7 @@
+"""
+Base Line Decision Algorithm
+"""
+
 from datetime import timedelta
 from Decision.Decision import Decision
 from Decision.Priority_Object import Priority_Object
@@ -10,6 +14,9 @@ class Decision_Alg_Dumber(Decision_Algorithm):
         self.receive_Priority.append(Priority_Object("Consumption", 4, context["consumption_prediction"]))
 
     def receive_EVS(self,context):
+        """
+        Allways charge EVs till max capacity
+        """
         for ev in context["connected_EVs"]:
             free_battery_space = ev.battery.battery_size - ev.battery.current_Capacity
             e = min([free_battery_space, ev.battery.charge_Rate])
@@ -34,6 +41,9 @@ class Decision_Alg_Dumber(Decision_Algorithm):
 
 
     def give_EVs(self,context):
+        """
+        EVs dont help household
+        """
         pass
 
 
