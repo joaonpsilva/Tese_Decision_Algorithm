@@ -11,7 +11,7 @@ class Decision_Alg_Dumber(Decision_Algorithm):
 
     
     def receive_consumption(self,context):
-        self.receive_Priority.append(Priority_Object("Consumption", 4, context["consumption_prediction"]))
+        self.receive_Priority.append(Priority_Object("Consumption", 3, context["consumption_prediction"]))
 
     def receive_EVS(self,context):
         """

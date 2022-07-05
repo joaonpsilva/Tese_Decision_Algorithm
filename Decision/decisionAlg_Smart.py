@@ -52,34 +52,35 @@ class Decision_Alg_Smart(Decision_Algorithm):
         energy_give = ev_energy_give + batery_give + context["production"]
         #energy that is needed
         energy_need = ev_energy_need
-        #energy that will remain
+        #energy that will remain from predicted production, batteries and evs
+        #taking into account EV needs
         energy_remaining = energy_give - energy_need
         #times remaining is greater than consumption prediction
         times_greater = energy_remaining / context["consumption_prediction"]
 
-        #production energy that would be trownd away
-        waste = max([context["production"] - free_storage, 0])
+        if energy_remaining > 0: #will probably have some energy remaining 
 
+            #Will only believe consumption prediction if energy remaining is 5x times greater than consumption
+            if times_greater >= 5:    #there is plenty energy, reserve with no fear
+                c = context["consumption_prediction"]
+                p=3
 
-        if energy_remaining < 0:    #there is no energy available, will have to take from grid (simul_correction)
-            c = max([context["consumption_prediction"], waste]) #0
-            p = 0   #only charge from solar panels
-
-        elif times_greater >= 5:    #there is plenty energy, reserve with no fear
-            c = max([context["consumption_prediction"], waste])
-            p=4
-
-        else:
-            if context["grid"].kwh_price > context["grid"].average_kwh_price:   #there is energy and grid is expensive
-                c = max([context["consumption_prediction"], waste])
-                p=4
             else:
-                c = context["consumption_prediction"] * times_greater / 5   #grid is not expensive, there is energy, reserve only waste
-                self.receive_Priority.append(Priority_Object("Consumption", 4, c))
-                c = max([context["consumption_prediction"], waste])
-                p = 0
+                if context["grid"].kwh_price > context["grid"].average_kwh_price:   #there is energy and grid is expensive
 
-        self.receive_Priority.append(Priority_Object("Consumption", p, c))
+                    #trust consumption prediction, be mindfull to not reserve to much
+                    c = min([context["consumption_prediction"], energy_remaining])
+                    p=3
+                else: #grid is not expensive, there is some energy
+                    #reserve only portion of prediction
+                    #use times greater to identify portion, where 5x times greater would be
+                    #trusting the prediction completely
+                    c = context["consumption_prediction"] * times_greater / 5
+                    p=3
+
+            self.receive_Priority.append(Priority_Object("Consumption", p, c))
+        self.receive_Priority.append(Priority_Object("Consumption", 0, 99999))
+
         
 
 
@@ -339,5 +340,5 @@ class Decision_Alg_Smart(Decision_Algorithm):
         else:
             grid_P = 4
 
-            
+
         self.give_Priority.append(Priority_Object("Grid", grid_P, 99999999))
