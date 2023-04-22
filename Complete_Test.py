@@ -1,4 +1,7 @@
-from audioop import avg
+"""
+SCRIPT TO RUN ALL SUBSCENARIOS FOR 10 DIFFERENT HOUSES 
+"""
+
 from main import execute
 from prettytable import PrettyTable
 import matplotlib.pyplot as plt
@@ -118,9 +121,11 @@ for scenario in scenarios:
         
         #SCENARIO PLOT
         plt.figure(figsize=(25,10))
-        plt.title(str(scenario) + ", House " + str(house))
+        plt.title(str(scenario) + ", House " + str(house),fontsize=20)
         plt.ylabel('Total Cost €')
         plt.xlabel('month')
+        plt.xticks(fontsize=20)
+        plt.yticks(fontsize=20)
 
         for alg, style,index in zip(["smart", "base"], ["-", ":"], [0,5]):
 
@@ -163,7 +168,7 @@ for scenario in scenarios:
 
                 plt.plot([r[1] for r in results[:-1]], linewidth=4, linestyle=style, color=color, label=str(scen))
 
-        plt.legend()
+        plt.legend(fontsize=20)
         plt.savefig(scenario_directory + "/" + str(scenario) + ".png")
     
 
@@ -186,16 +191,18 @@ for scenario in scenarios:
         f_average.write(plotStyle[sen][3] + "  " + str(sum(average_final[sen])) + "\n")
     
     plt.figure(figsize=(25,10))
-    plt.title(str(scenario) + " Average")
+    plt.title(str(scenario) + " Average",fontsize=20)
     plt.ylabel('Total Cost €')
     plt.xlabel('month')
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
 
     
                 
     for l,style in zip(average_final, plotStyle) :
         plt.plot(l, linewidth=style[1], linestyle=style[2], color=style[0], label=style[3])
     
-    plt.legend()
+    plt.legend(fontsize=20)
     plt.savefig(str(scenario) + ".png")
 
     f_average.write("\n\n")
